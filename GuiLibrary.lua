@@ -1,5 +1,3 @@
-local startupArgs = ({...})[1] or {}
-
 if getgenv().library ~= nil then
     getgenv().library:Unload();
 end
@@ -57,9 +55,6 @@ local library = {
     open = false;
     opening = false;
     hasInit = false;
-    cheatname = startupArgs.cheatname or 'Clanware';
-    gamename = startupArgs.gamename or 'Universal';
-    fileext = startupArgs.fileext or '.txt';
 }
 
 library.themes = {
@@ -603,10 +598,15 @@ function library:Unload()
     getgenv().library = nil
 end
 
-function library:init()
+function library:init(args)
     if self.hasInit then
         return
     end
+
+    args = args or {}
+    self.cheatname = args.cheatname or 'Clanware'
+    self.gamename = args.gamename or 'Universal'
+    self.fileext = args.fileext or '.txt'
 
     local tooltipObjects = {};
 
@@ -1916,13 +1916,16 @@ function library:init()
                 end)
 
                 for _,v in pairs(objs) do
-                    if v.Object.Transparency ~= 0 then
+
+                    local proxyObject = library.drawings[v]
+
+                    if proxyObject and proxyObject.Object.Transparency ~= 0 then
                         task.spawn(function()
                             if bool then
-                                utility:Tween(v.Object, 'Transparency', visValues[v] or 1, .1);
+                                utility:Tween(proxyObject.Object, 'Transparency', visValues[v] or 1, .1);
                             else
-                                visValues[v] = v.Object.Transparency;
-                                utility:Tween(v.Object, 'Transparency', .05, .1);
+                                visValues[v] = proxyObject.Object.Transparency;
+                                utility:Tween(proxyObject.Object, 'Transparency', .05, .1);
                             end
                         end)
                     end
