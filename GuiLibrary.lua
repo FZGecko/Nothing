@@ -3273,7 +3273,8 @@ function sections:keybind(props)
 		["allowed"] = allowed,
 		["current"] = {typeis,utility.splitenum(def)},
 		["pressed"] = false,
-		["callback"] = callback
+		["callback"] = callback,
+		["ignoreNextMouse1"] = false -- Initialize the flag
 	}
 	--
 	button.MouseButton1Down:Connect(function()
@@ -3282,6 +3283,8 @@ function sections:keybind(props)
 			value.Text = "..."
 			table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
 			keybind.down = true
+			task.wait() -- Allow the current MouseButton1Down event to finish its cycle
+			keybind.ignoreNextMouse1 = true -- Flag to ignore the next MouseButton1 InputBegan if it's the same one that triggered the button
         end
 	end)
 	--
@@ -3311,6 +3314,11 @@ function sections:keybind(props)
 	--
 	uis.InputBegan:Connect(function(Input)
 		if keybind.down then
+			-- Ignore the MouseButton1 event that just activated the keybind capture mode
+			if keybind.ignoreNextMouse1 and Input.UserInputType == Enum.UserInputType.MouseButton1 then
+				keybind.ignoreNextMouse1 = false
+				return
+			end
 			if Input.UserInputType == Enum.UserInputType.Keyboard then
 				local capd = utility.capatalize(Input.KeyCode.Name)
 				if #capd > 1 then
