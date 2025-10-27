@@ -50,6 +50,9 @@ loaderguis.__index = loaderguis
 watermarks.__index = watermarks
 loaders.__index = loaders
 -- // functions
+library.theme = {
+	accent = Color3.fromRGB(225, 58, 81) -- Default accent color
+}
 utility.new = function(instance,properties) 
 	-- // instance
 	local ins = Instance.new(instance)
@@ -140,6 +143,7 @@ function library:new(props)
 	local name = props.name or props.Name or props.UiName or props.Uiname or props.uiName or props.username or props.Username or props.UserName or props.userName or "new ui"
 	local color = props.color or props.Color or props.mainColor or props.maincolor or props.MainColor or props.Maincolor or props.Accent or props.accent or Color3.fromRGB(225, 58, 81)
 	-- // variables
+	self.theme.accent = color -- Set the library-wide theme color
 	local window = {}
 	-- // main
 	local screen = utility.new(
@@ -342,10 +346,8 @@ function library:new(props)
 		["y"] = true,
 		["key"] = Enum.KeyCode.RightShift,
 		["textsize"] = textsize,
-		["font"] = font,
-		["theme"] = {
-			["accent"] = color
-		},
+		["font"] = font, 
+		["theme"] = self.theme, -- Reference the library's theme
 		["themeitems"] = {
 			["accent"] = {
 				["BackgroundColor3"] = {},
@@ -585,10 +587,10 @@ function library:loaderGui(props)
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 30),
 			Position = UDim2.new(0, 0, 0, 10),
-			Font = self.font,
+			Font = Enum.Font.SourceSansBold, -- Use a default font
 			Text = name,
 			TextColor3 = Color3.fromRGB(255, 255, 255),
-			TextSize = self.textsize + 2,
+			TextSize = 16, -- Use a default text size
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Center",
 			Parent = mainFrame
@@ -625,10 +627,10 @@ function library:loaderGui(props)
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 1, 0),
 			Position = UDim2.new(0, 0, 0, 0),
-			Font = self.font,
+			Font = Enum.Font.SourceSans, -- Use a default font
 			Text = "0%",
 			TextColor3 = Color3.fromRGB(255, 255, 255),
-			TextSize = self.textsize,
+			TextSize = 14, -- Use a default text size
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Center",
 			Parent = progressBarBg
