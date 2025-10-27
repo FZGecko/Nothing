@@ -1,4845 +1,4601 @@
-if getgenv().library ~= nil then
-    getgenv().library:Unload();
+-- // variables
+local library = {}
+local pages = {}
+local sections = {}
+local multisections = {}
+local mssections = {}
+local toggles = {}
+local buttons = {}
+local sliders = {}
+local dropdowns = {}
+local multiboxs = {}
+local buttonboxs = {}
+local textboxs = {}
+local keybinds = {}
+local colorpickers = {}
+local configloaders = {}
+local watermarks = {}
+local loaders = {}
+--
+local utility = {}
+--
+local check_exploit = (syn and "Synapse") or (KRNL_LOADED and "Krnl") or (isourclosure and "ScriptWare") or nil
+local plrs = game:GetService("Players")
+local cre = game:GetService("CoreGui")
+local rs = game:GetService("RunService")
+local ts = game:GetService("TweenService") 
+local uis = game:GetService("UserInputService") 
+local hs = game:GetService("HttpService")
+local ws = game:GetService("Workspace")
+local plr = plrs.LocalPlayer
+local cam = ws.CurrentCamera
+-- // indexes
+library.__index = library
+pages.__index = pages
+sections.__index = sections
+multisections.__index = multisections
+mssections.__index = mssections
+toggles.__index = toggles
+buttons.__index = buttons
+sliders.__index = sliders
+dropdowns.__index = dropdowns
+multiboxs.__index = multiboxs
+buttonboxs.__index = buttonboxs
+textboxs.__index = textboxs
+keybinds.__index = keybinds
+colorpickers.__index = colorpickers
+configloaders.__index = configloaders
+watermarks.__index = watermarks
+loaders.__index = loaders
+-- // functions
+utility.new = function(instance,properties) 
+	-- // instance
+	local ins = Instance.new(instance)
+	-- // properties setting
+	for property,value in pairs(properties) do
+		ins[property] = value
+	end
+	-- // return
+	return ins
 end
+--
+utility.dragify = function(ins,touse)
+	local dragging
+	local dragInput
+	local dragStart
+	local startPos
+	--
+	local function update(input)
+		local delta = input.Position - dragStart
+		touse:TweenPosition(UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.1,true)
+	end
+	--
+	ins.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = touse.Position
 
-if not game:IsLoaded() then
-    game.Loaded:Wait()
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+	--
+	ins.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+	--
+	uis.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			update(input)
+		end
+	end)
 end
-
-local function gs(a)
-    return game:GetService(a)
+--
+utility.round = function(n,d)
+	return tonumber(string.format("%."..(d or 0).."f",n))
 end
-
--- // Variables
-local players, http, runservice, inputservice, tweenService, stats, actionservice = gs('Players'), gs('HttpService'), gs('RunService'), gs('UserInputService'), gs('TweenService'), gs('Stats'), gs('ContextActionService')
-local localplayer = players.LocalPlayer
-
-local setByConfig = false
-local floor, ceil, huge, pi, clamp = math.floor, math.ceil, math.huge, math.pi, math.clamp
-local c3new, fromrgb, fromhsv = Color3.new, Color3.fromRGB, Color3.fromHSV
-local next, newInstance, newUDim2, newVector2 = next, Instance.new, UDim2.new, Vector2.new
-
-local library = {
-    windows = {};
-    indicators = {};
-    flags = {};
-    options = {};
-    connections = {};
-    drawings = {};
-    instances = {};
-    utility = {};
-    notifications = {};
-    tweens = {};
-    theme = {};
-    zindexOrder = {
-        ['indicator'] = 950;
-        ['window'] = 1000;
-        ['dropdown'] = 1200;
-        ['colorpicker'] = 1100;
-        ['watermark'] = 1300;
-        ['notification'] = 1400;
-        ['cursor'] = 1500;
-    },
-    stats = {
-        ['fps'] = 0;
-        ['ping'] = 0;
-    };
-    images = {
-        ['gradientp90'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/gradient90.png';
-        ['gradientp45'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/gradient45.png';
-        ['colorhue'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/lgbtqshit.png';
-        ['colortrans'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/trans.png';
-    };
-    numberStrings = {['Zero'] = 0, ['One'] = 1, ['Two'] = 2, ['Three'] = 3, ['Four'] = 4, ['Five'] = 5, ['Six'] = 6, ['Seven'] = 7, ['Eight'] = 8, ['Nine'] = 9};
-    signal = loadstring(game:HttpGet('https://raw.githubusercontent.com/Quenty/NevermoreEngine/main/src/signal/src/Shared/Signal.lua'))();
-    open = false;
-    opening = false;
-    hasInit = false;
-}
-
-library.themes = {
-    {
-        name = 'Default',
-        theme = {
-            ['Accent']                    = fromrgb(124,97,196);
-            ['Background']                = fromrgb(17,17,17);
-            ['Border']                    = fromrgb(0,0,0);
-            ['Border 1']                  = fromrgb(47,47,47);
-            ['Border 2']                  = fromrgb(17,17,17);
-            ['Border 3']                  = fromrgb(10,10,10);
-            ['Primary Text']              = fromrgb(235,235,235);
-            ['Group Background']          = fromrgb(17,17,17);
-            ['Selected Tab Background']   = fromrgb(17,17,17);
-            ['Unselected Tab Background'] = fromrgb(17,17,17);
-            ['Selected Tab Text']         = fromrgb(245,245,245);
-            ['Unselected Tab Text']       = fromrgb(145,145,145);
-            ['Section Background']        = fromrgb(17,17,17);
-            ['Option Text 1']             = fromrgb(245,245,245);
-            ['Option Text 2']             = fromrgb(195,195,195);
-            ['Option Text 3']             = fromrgb(145,145,145);
-            ['Option Border 1']           = fromrgb(47,47,47);
-            ['Option Border 2']           = fromrgb(0,0,0);
-            ['Option Background']         = fromrgb(35,35,35);
-            ["Risky Text"]                = fromrgb(175, 21, 21);
-            ["Risky Text Enabled"]        = fromrgb(255, 41, 41);
-        }
-    },
-    {
-        name = 'Midnight',
-        theme = {
-            ['Accent']                    = fromrgb(103,89,179);
-            ['Background']                = fromrgb(22,22,31);
-            ['Border']                    = fromrgb(0,0,0);
-            ['Border 1']                  = fromrgb(50,50,50);
-            ['Border 2']                  = fromrgb(24,25,37);
-            ['Border 3']                  = fromrgb(10,10,10);
-            ['Primary Text']              = fromrgb(235,235,235);
-            ['Group Background']          = fromrgb(24,25,37);
-            ['Selected Tab Background']   = fromrgb(24,25,37);
-            ['Unselected Tab Background'] = fromrgb(22,22,31);
-            ['Selected Tab Text']         = fromrgb(245,245,245);
-            ['Unselected Tab Text']       = fromrgb(145,145,145);
-            ['Section Background']        = fromrgb(22,22,31);
-            ['Option Text 1']             = fromrgb(245,245,245);
-            ['Option Text 2']             = fromrgb(195,195,195);
-            ['Option Text 3']             = fromrgb(145,145,145);
-            ['Option Border 1']           = fromrgb(50,50,50);
-            ['Option Border 2']           = fromrgb(0,0,0);
-            ['Option Background']         = fromrgb(24,25,37);
-            ["Risky Text"]                = fromrgb(175, 21, 21);
-            ["Risky Text Enabled"]        = fromrgb(255, 41, 41);
-        }
-    },
-    {
-        name = 'Nekocheat',
-        theme = {
-            ["Accent"]                    = fromrgb(226, 30, 112);
-            ["Background"]                = fromrgb(18,18,18);
-            ["Border"]                    = fromrgb(0,0,0);
-            ["Border 1"]                  = fromrgb(60,60,60);
-            ["Border 2"]                  = fromrgb(18,18,18);
-            ["Border 3"]                  = fromrgb(10,10,10);
-            ["Primary Text"]              = fromrgb(255,255,255);
-            ["Group Background"]          = fromrgb(18,18,18);
-            ["Selected Tab Background"]   = fromrgb(18,18,18);
-            ["Unselected Tab Background"] = fromrgb(18,18,18);
-            ["Selected Tab Text"]         = fromrgb(245,245,245);
-            ["Unselected Tab Text"]       = fromrgb(145,145,145);
-            ["Section Background"]        = fromrgb(18,18,18);
-            ["Option Text 1"]             = fromrgb(255,255,255);
-            ["Option Text 2"]             = fromrgb(255,255,255);
-            ["Option Text 3"]             = fromrgb(255,255,255);
-            ["Option Border 1"]           = fromrgb(50,50,50);
-            ["Option Border 2"]           = fromrgb(0,0,0);
-            ["Option Background"]         = fromrgb(23,23,23);
-            ["Risky Text"]                = fromrgb(175, 21, 21);
-            ["Risky Text Enabled"]        = fromrgb(255, 41, 41);
-        }
-    },
-    {
-        name = 'Nekocheat Blue',
-        theme = {
-            ["Accent"]                    = fromrgb(0, 247, 255);
-            ["Background"]                = fromrgb(18,18,18);
-            ["Border"]                    = fromrgb(0,0,0);
-            ["Border 1"]                  = fromrgb(60,60,60);
-            ["Border 2"]                  = fromrgb(18,18,18);
-            ["Border 3"]                  = fromrgb(10,10,10);
-            ["Primary Text"]              = fromrgb(255,255,255);
-            ["Group Background"]          = fromrgb(18,18,18);
-            ["Selected Tab Background"]   = fromrgb(18,18,18);
-            ["Unselected Tab Background"] = fromrgb(18,18,18);
-            ["Selected Tab Text"]         = fromrgb(245,245,245);
-            ["Unselected Tab Text"]       = fromrgb(145,145,145);
-            ["Section Background"]        = fromrgb(18,18,18);
-            ["Option Text 1"]             = fromrgb(255,255,255);
-            ["Option Text 2"]             = fromrgb(255,255,255);
-            ["Option Text 3"]             = fromrgb(255,255,255);
-            ["Option Border 1"]           = fromrgb(50,50,50);
-            ["Option Border 2"]           = fromrgb(0,0,0);
-            ["Option Background"]         = fromrgb(23,23,23);
-            ["Risky Text"]                = fromrgb(175, 21, 21);
-            ["Risky Text Enabled"]        = fromrgb(255, 41, 41);
-        }
-    },
-    {
-        name = 'Fatality',
-        theme = {
-            ['Accent']                    = fromrgb(197,7,83);
-            ['Background']                = fromrgb(25,19,53);
-            ['Border']                    = fromrgb(0,0,0);
-            ['Border 1']                  = fromrgb(60,53,93);
-            ['Border 2']                  = fromrgb(29,23,66);
-            ['Border 3']                  = fromrgb(10,10,10);
-            ['Primary Text']              = fromrgb(235,235,235);
-            ['Group Background']          = fromrgb(29,23,66);
-            ['Selected Tab Background']   = fromrgb(29,23,66);
-            ['Unselected Tab Background'] = fromrgb(25,19,53);
-            ['Selected Tab Text']         = fromrgb(245,245,245);
-            ['Unselected Tab Text']       = fromrgb(145,145,145);
-            ['Section Background']        = fromrgb(25,19,53);
-            ['Option Text 1']             = fromrgb(245,245,245);
-            ['Option Text 2']             = fromrgb(195,195,195);
-            ['Option Text 3']             = fromrgb(145,145,145);
-            ['Option Border 1']           = fromrgb(60,53,93);
-            ['Option Border 2']           = fromrgb(0,0,0);
-            ['Option Background']         = fromrgb(29,23,66);
-            ["Risky Text"]                = fromrgb(175, 21, 21);
-            ["Risky Text Enabled"]        = fromrgb(255, 41, 41);
-        }
-    },
-    {
-        name = 'Gamesense',
-        theme = {
-            ['Accent']                    = fromrgb(147,184,26);
-            ['Background']                = fromrgb(17,17,17);
-            ['Border']                    = fromrgb(0,0,0);
-            ['Border 1']                  = fromrgb(47,47,47);
-            ['Border 2']                  = fromrgb(17,17,17);
-            ['Border 3']                  = fromrgb(10,10,10);
-            ['Primary Text']              = fromrgb(235,235,235);
-            ['Group Background']          = fromrgb(17,17,17);
-            ['Selected Tab Background']   = fromrgb(17,17,17);
-            ['Unselected Tab Background'] = fromrgb(17,17,17);
-            ['Selected Tab Text']         = fromrgb(245,245,245);
-            ['Unselected Tab Text']       = fromrgb(145,145,145);
-            ['Section Background']        = fromrgb(17,17,17);
-            ['Option Text 1']             = fromrgb(245,245,245);
-            ['Option Text 2']             = fromrgb(195,195,195);
-            ['Option Text 3']             = fromrgb(145,145,145);
-            ['Option Border 1']           = fromrgb(47,47,47);
-            ['Option Border 2']           = fromrgb(0,0,0);
-            ['Option Background']         = fromrgb(35,35,35);
-            ["Risky Text"]                = fromrgb(175, 21, 21);
-            ["Risky Text Enabled"]        = fromrgb(255, 41, 41);
-        }
-    },
-    {
-        name = 'Twitch',
-        theme = {
-            ['Accent']                    = fromrgb(169,112,255);
-            ['Background']                = fromrgb(14,14,14);
-            ['Border']                    = fromrgb(0,0,0);
-            ['Border 1']                  = fromrgb(45,45,45);
-            ['Border 2']                  = fromrgb(31,31,35);
-            ['Border 3']                  = fromrgb(10,10,10);
-            ['Primary Text']              = fromrgb(235,235,235);
-            ['Group Background']          = fromrgb(31,31,35);
-            ['Selected Tab Background']   = fromrgb(31,31,35);
-            ['Unselected Tab Background'] = fromrgb(17,17,17);
-            ['Selected Tab Text']         = fromrgb(225,225,225);
-            ['Unselected Tab Text']       = fromrgb(160,170,175);
-            ['Section Background']        = fromrgb(17,17,17);
-            ['Option Text 1']             = fromrgb(245,245,245);
-            ['Option Text 2']             = fromrgb(195,195,195);
-            ['Option Text 3']             = fromrgb(145,145,145);
-            ['Option Border 1']           = fromrgb(45,45,45);
-            ['Option Border 2']           = fromrgb(0,0,0);
-            ['Option Background']         = fromrgb(24,24,27);
-            ["Risky Text"]                = fromrgb(175, 21, 21);
-            ["Risky Text Enabled"]        = fromrgb(255, 41, 41);
-        }
-    }
-}
-
-local blacklistedKeys = {
-    Enum.KeyCode.Unknown,
-    Enum.KeyCode.W,
-    Enum.KeyCode.A,
-    Enum.KeyCode.S,
-    Enum.KeyCode.D,
-    Enum.KeyCode.Slash,
-    Enum.KeyCode.Tab,
-    Enum.KeyCode.Escape
-}
-
-local whitelistedBoxKeys = {
-    Enum.KeyCode.Zero,
-    Enum.KeyCode.One,
-    Enum.KeyCode.Two,
-    Enum.KeyCode.Three,
-    Enum.KeyCode.Four,
-    Enum.KeyCode.Five,
-    Enum.KeyCode.Six,
-    Enum.KeyCode.Seven,
-    Enum.KeyCode.Eight,
-    Enum.KeyCode.Nine
-}
-
-local keyNames = {
-    [Enum.KeyCode.LeftControl] = 'LCTRL';
-    [Enum.KeyCode.RightControl] = 'RCTRL';
-    [Enum.KeyCode.LeftShift] = 'LSHIFT';
-    [Enum.KeyCode.RightShift] = 'RSHIFT';
-    [Enum.UserInputType.MouseButton1] = 'MB1';
-    [Enum.UserInputType.MouseButton2] = 'MB2';
-    [Enum.UserInputType.MouseButton3] = 'MB3';
-}
-
-library.button1down = library.signal.new()
-library.button1up   = library.signal.new()
-library.mousemove   = library.signal.new()
-library.unloaded    = library.signal.new();
-
-local button1down, button1up, mousemove = library.button1down, library.button1up, library.mousemove
-local mb1down = false;
-    
-    -- Public domain, source: http://lua-users.org/wiki/BaseSixtyFour
-    -- This makes base64 decoding universal, removing the dependency on syn.crypt
-    local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-    function utility:Base64Decode(data)
-        data = string.gsub(data, '[^'..b..'=]', '')
-        return (data:gsub('.', function(x)
-            if (x == '=') then return '' end
-            local r,f='',(b:find(x)-1)
-            for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
-            return r;
-        end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
-            if (#x ~= 8) then return '' end
-            local c=0
-            for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
-            return string.char(c)
-        end))
-    end
-
-local utility = library.utility
-do
-
-    function utility:Connection(signal, func)
-        local c = signal:Connect(func)
-        table.insert(library.connections, c)
-        return c
-    end
-
-    function utility:Instance(class, properties)
-        local inst = newInstance(class)
-        for prop, val in pairs(properties or {}) do
-            -- Stop swallowing errors. If this fails, we WANT to know why.
-            -- The original pcall was hiding potential bugs.
-            inst[prop] = val
-        end
-        return inst
-    end
-
-    function utility:HasProperty(obj, prop)
-        return ({(pcall(function() local a = obj[prop] end))})[1]
-    end
-
-    function utility:ToRGB(c3)
-        return c3.R*255,c3.G*255,c3.B*255
-    end
-
-    function utility:AddRGB(a,b)
-        local r1,g1,b1 = self:ToRGB(a);
-        local r2,g2,b2 = self:ToRGB(b);
-        return fromrgb(clamp(r1+r2,0,255),clamp(g1+g2,0,255),clamp(b1+b2,0,255))
-    end
-
-    function utility:ConvertNumberRange(val,oldmin,oldmax,newmin,newmax)
-        return (((val - oldmin) * (newmax - newmin)) / (oldmax - oldmin)) + newmin
-    end
-
-    function utility:UDim2ToVector2(udim2, vector2)
-        local x,y
-        x = udim2.X.Offset + self:ConvertNumberRange(udim2.X.Scale,0,1,0,vector2.X)
-        y = udim2.Y.Offset + self:ConvertNumberRange(udim2.Y.Scale,0,1,0,vector2.Y)
-        return newVector2(x,y)
-    end
-
-    function utility:Lerp(a,b,c)
-        return a + (b-a) * c
-    end
-
-    -- This is a proper TweenService wrapper. It's more performant, reliable, and uses the engine's native capabilities.
-    -- The old implementation was a custom, RenderStepped-based loop which is incredibly inefficient.
-    function utility:Tween(obj, prop, val, time, direction, style)
-        -- Cancel any existing tween on the same object/property combination.
-        if library.tweens[obj] and library.tweens[obj][prop] then
-            library.tweens[obj][prop]:Cancel()
-            library.tweens[obj][prop] = nil
-        end
-
-        local tweenInfo = TweenInfo.new(
-            time,
-            style or Enum.EasingStyle.Linear,
-            direction or Enum.EasingDirection.In
-        )
-
-        -- The property must be tweenable (e.g., Color3, UDim2, number, Vector2, etc.)
-        -- The Drawing proxy complicates this, so we target the .Object directly.
-        local targetObject = obj.Object or obj 
-        local tween = tweenService:Create(targetObject, tweenInfo, { [prop] = val })
-        tween:Play()
-
-        library.tweens[obj] = library.tweens[obj] or {}
-        library.tweens[obj][prop] = tween
-
-        -- For compatibility with the old system's .Completed signal
-        utility:Connection(tween.Completed, function()
-            if library.tweens[obj] then
-                library.tweens[obj][prop] = nil
-            end
-        end)
-
-        return tween
-    end
-
-    function utility:DetectTableChange(indexcallback,newindexcallback)
-        if indexcallback == nil then
-            warn('DetectTableChange: Argument #1 (indexcallback) is nil, function may not work as expected.')
-        elseif newindexcallback == nil then
-            warn('DetectTableChange: Argument #2 (newindexcallback) is nil, function may not work as expected.')
-        end
-        local proxy = newproxy(true);
-        local mt = getmetatable(proxy);
-        mt.__index = indexcallback
-        mt.__newindex = newindexcallback
-        return proxy
-    end
-
-    function utility:MouseOver(obj)
-        local mousePos = inputservice:GetMouseLocation();
-        local x1 = obj.Position.X
-        local y1 = obj.Position.Y
-        local x2 = x1 + obj.Size.X
-        local y2 = y1 + obj.Size.Y
-        return (mousePos.X >= x1 and mousePos.Y >= y1 and mousePos.X <= x2 and mousePos.Y <= y2)
-    end
-
-    function utility:GetHoverObject()
-        local topWindow, topZ = nil, -1
-        for _, window in pairs(library.windows) do
-            if window.open and window.objects.background.Object.Visible and self:MouseOver(window.objects.background.Object) then
-                local z = window.objects.background.Object.ZIndex
-                if z > topZ then
-                    topZ = z
-                    topWindow = window
-                end
-            end
-        end
-
-        if not topWindow then return nil end
-
-        local hoveredDescendants = {}
-        local descendants = topWindow.objects.background:GetDescendants()
-        table.insert(descendants, topWindow.objects.background) -- Check the window itself too
-
-        for _, descendant in pairs(descendants) do
-            if descendant.Object.Visible and (descendant.Class == 'Square' or descendant.Class == 'Triangle') and self:MouseOver(descendant.Object) then
-                table.insert(hoveredDescendants, descendant.Object)
-            end
-        end
-
-        table.sort(hoveredDescendants, function(a, b) return a.ZIndex > b.ZIndex end)
-        return hoveredDescendants[1]
-    end
-
-    function utility:Draw(class, properties)
-        local blacklistedProperties = {'Object','Children','Class'}
-        local drawing = {
-            Object = Drawing.new(class);
-            Children = {};
-            ThemeColor = '';
-            OutlineThemeColor = '';
-            ThemeColorOffset = 0;
-            OutlineThemeColorOffset = 0;
-            Parent = nil;
-            Size = newUDim2(0,0,0,0);
-            Position = newUDim2(0,0,0,0);
-            AbsoluteSize = newVector2(0,0);
-            AbsolutePosition = newVector2(0,0);
-            Hover = false;
-            Visible = true;
-            MouseButton1Down = library.signal.new();
-            MouseButton2Down = library.signal.new();
-            MouseButton1Up = library.signal.new();
-            MouseButton2Up = library.signal.new();
-            MouseEnter = library.signal.new();
-            MouseLeave = library.signal.new();
-            Class = class;
-        }
-
-        function drawing:Update()
-            -- if drawing.Parent then
-                local parent = drawing.Parent ~= nil and library.drawings[drawing.Parent.Object] or nil
-                local parentSize,parentPos,parentVis = workspace.CurrentCamera.ViewportSize, Vector2.new(0,0), true;
-                if parent ~= nil then
-                    parentSize = (parent.Class == 'Square' or parent.Class == 'Image') and parent.Object.Size or parent.Class == 'Text' and parent.TextBounds or workspace.CurrentCamera.ViewportSize
-                    parentPos = parent.Object.Position
-                    parentVis = parent.Object.Visible
-                end
-
-                if drawing.Class == 'Square' or drawing.Class == 'Image' then
-                    drawing.Object.Size = typeof(drawing.Size) == 'Vector2' and drawing.Size or typeof(drawing.Size) == 'UDim2' and utility:UDim2ToVector2(drawing.Size,parentSize)
-                end
-
-                if drawing.Class == 'Square' or drawing.Class == 'Image' or drawing.Class == 'Circle' or drawing.Class == 'Text' then
-                    drawing.Object.Position = parentPos + (typeof(drawing.Position) == 'Vector2' and drawing.Position or utility:UDim2ToVector2(drawing.Position,parentSize))
-                end
-
-                drawing.Object.Visible = (parentVis and drawing.Visible) and true or false
-
-            -- end
-            drawing:UpdateChildren()
-        end
-
-        function drawing:UpdateChildren()
-            for i,v in pairs(drawing.Children) do
-                v:Update()
-            end
-        end
-
-        function drawing:GetDescendants()
-            local descendants = {};
-            local function a(t)
-                for _,v in pairs(t.Children) do
-                    table.insert(descendants, v);
-                    a(v)
-                end
-            end
-            a(self)
-            return descendants;
-        end
-
-        library.drawings[drawing.Object] = drawing
-
-        -- this is really stupid lol
-        local proxy = utility:DetectTableChange(
-        function(obj,i)
-            return drawing[i] == nil and drawing.Object[i] or drawing[i]
-        end,
-        function(obj,i,v)
-            if not table.find(blacklistedProperties,i) then
-
-                local lastval = drawing[i]
-
-                if i == 'Size' and (class == 'Square' or class == 'Image') then
-                    drawing.Object.Size = utility:UDim2ToVector2(v,drawing.Parent == nil and workspace.CurrentCamera.ViewportSize or drawing.Parent.Object.Size);
-                    drawing.AbsoluteSize = drawing.Object.Size;
-                elseif i == 'Position' and (class == 'Square' or class == 'Image' or class == 'Text') then
-                    drawing.Object.Position =  utility:UDim2ToVector2(v,drawing.Parent == nil and newVector2(0,0) or drawing.Parent.Object.Position);
-                    drawing.AbsolutePosition = drawing.Object.Position;
-                elseif i == 'Parent' then
-                    if drawing.Parent ~= nil then
-                        drawing.Parent.Children[drawing] = nil
-                    end
-                    if v ~= nil then
-                        table.insert(v.Children,drawing)
-                    end
-                elseif i == 'Font' and v == 2 and Drawing.Fonts[v] == nil then
-                    -- If Font 2 (GothamSemibold) is not available (e.g., on ScriptWare), fall back to Font 1.
-                    v = 1
-                elseif i == 'Visible' then
-                    drawing.Visible = v
-                end
-
-                pcall(function()
-                    drawing.Object[i] = v
-                end)
-                if drawing[i] ~= nil or i == 'Parent' then
-                    drawing[i] = v
-                end
-
-                if table.find({'Size','Position','Position','Visible','Parent'},i) then
-                    drawing:Update()
-                end
-                if table.find({'ThemeColor','OutlineThemeColor','ThemeColorOffset','OutlineThemeColorOffset'},i) and lastval ~= v then
-                    library.UpdateThemeColors()
-                end
-
-            end
-        end)
-
-        function drawing:Remove()
-            for i,v in pairs(self.Children) do
-                v:Remove();
-            end
-
-            if drawing.Parent then
-                drawing.Parent.Children[drawing.Object] = nil;
-            end
-
-            library.drawings[drawing.Object] = nil;
-            drawing.Object:Remove();
-            table.clear(drawing);
-
-        end
-
-        properties = typeof(properties) == 'table' and properties or {}
-
-        if class == 'Square' and properties.Filled == nil then
-            properties.Filled = true;
-        end
-
-        if properties.Visible == nil then
-            properties.Visible = true;
-        end
-
-        for i,v in pairs(properties) do
-            proxy[i] = v
-        end
-
-        drawing:Update()
-        return proxy
-    end
+--
+utility.zigzag = function(X)
+	return math.acos(math.cos(X*math.pi))/math.pi
 end
-
-library.utility = utility
-
-function library:Unload()
-    library.unloaded:Fire();
-    for _,c in pairs(self.connections) do
-        c:Disconnect()
-    end
-    for obj in pairs(self.drawings) do
-        obj:Remove()
-    end
-    table.clear(self.drawings)
-    getgenv().library = nil
+--
+utility.capatalize = function(s)
+	local l = ""
+	for v in s:gmatch('%u') do
+		l = l..v
+	end
+	return l
 end
-
-function library:init(args)
-    if self.hasInit then
-        return
-    end
-
-    args = args or {}
-    self.cheatname = args.cheatname or 'Clanware'
-    self.gamename = args.gamename or 'Universal'
-    self.fileext = args.fileext or '.txt'
-
-    local tooltipObjects = {};
-
-    makefolder(self.cheatname)
-    makefolder(self.cheatname..'/assets')
-    makefolder(self.cheatname..'/'..self.gamename)
-    makefolder(self.cheatname..'/'..self.gamename..'/configs');
-
-    function self:SetTheme(theme)
-        for i,v in pairs(theme) do
-            self.theme[i] = v;
-        end
-        self.UpdateThemeColors();
-    end
-
-    function self:GetConfig(name)
-        if isfile(self.cheatname..'/'..self.gamename..'/configs/'..name..self.fileext) then
-            return readfile(self.cheatname..'/'..self.gamename..'/configs/'..name..self.fileext);
-        end
-    end
-
-    function self:LoadConfig(name)
-        local cfg = self:GetConfig(name)
-        if not cfg then
-            self:SendNotification('Error loading config: Config does not exist. ('..tostring(name)..')', 5, c3new(1,0,0));
-            return
-        end
-
-        local s,e = pcall(function()
-            setByConfig = true
-            for flag,value in pairs(http:JSONDecode(cfg)) do
-                local option = library.options[flag]
-                if option ~= nil then
-                    if option.class == 'toggle' then
-                        option:SetState(value == nil and false or (value == 1 and true or false));
-                    elseif option.class == 'slider' then
-                        option:SetValue(value == nil and 0 or value)
-                    elseif option.class == 'bind' then
-                        option:SetBind(value == nil and 'none' or (utility:HasProperty(Enum.KeyCode, value) and Enum.KeyCode[value] or Enum.UserInputType[value]));
-                    elseif option.class == 'color' then
-                        option:SetColor(value == nil and c3new(1,1,1) or c3new(value[1], value[2], value[3]));
-                        option:SetTrans(value == nil and 1 or value[4]);
-                    elseif option.class == 'list' then
-                        option:Select(value == nil and '' or value);
-                    elseif option.class == 'box' then
-                        option:SetInput(value == nil and '' or value)
-                    end
-                end
-            end
-            setByConfig = false
-        end)
-
-        if s then
-            self:SendNotification('Successfully loaded config: '..name, 5, c3new(0,1,0));
-        else
-            self:SendNotification('Error loading config: '..tostring(e)..'. ('..tostring(name)..')', 5, c3new(1,0,0));
-        end
-    end
-
-    function self:SaveConfig(name)
-        if not self:GetConfig(name) then
-            self:SendNotification('Error saving config: Config does not exist. ('..tostring(name)..')', 5, c3new(1,0,0));
-            return
-        end
-
-        local s,e = pcall(function()
-            local cfg = {};
-            for flag,option in pairs(self.options) do
-                if option.class == 'toggle' then
-                    cfg[flag] = option.state and 1 or 0;
-                elseif option.class == 'slider' then
-                    cfg[flag] = option.value;
-                elseif option.class == 'bind' then
-                    cfg[flag] = option.bind.Name;
-                elseif option.class == 'color' then
-                    cfg[flag] = {
-                        option.color.r,
-                        option.color.g,
-                        option.color.b,
-                        option.trans,
-                    }
-                elseif option.class == 'list' then
-                    cfg[flag] = option.selected;
-                elseif option.class == 'box' then
-                    cfg[flag] = option.input
-                end
-            end
-            writefile(self.cheatname..'/'..self.gamename..'/configs/'..name..self.fileext, http:JSONEncode(cfg));
-        end)
-
-        if s then
-            self:SendNotification('Successfully saved config: '..name, 5, c3new(0,1,0));
-        else
-            self:SendNotification('Error saving config: '..tostring(e)..'. ('..tostring(name)..')', 5, c3new(1,0,0));
-        end
-    end
-
-    for i,v in pairs(self.images) do
-        if not isfile(self.cheatname..'/assets/'..i..'.oh') then
-            writefile(self.cheatname..'/assets/'..i..'.oh', game:HttpGet(v))
-        end
-        self.images[i] = readfile(self.cheatname..'/assets/'..i..'.oh');
-    end
-
-    self.cursor1 = utility:Draw('Triangle', {Filled = true, Color = fromrgb(255,255,255), ZIndex = self.zindexOrder.cursor});
-    self.cursor2 = utility:Draw('Triangle', {Filled = true, Color = fromrgb(85,85,85), self.zindexOrder.cursor-1});
-    local function updateCursor()
-        self.cursor1.Visible = self.open
-        self.cursor2.Visible = self.open
-        if self.cursor1.Visible then
-            local pos = inputservice:GetMouseLocation();
-            self.cursor1.PointA = pos;
-            self.cursor1.PointB = pos + newVector2(16,5);
-            self.cursor1.PointC = pos + newVector2(5,16);
-            self.cursor2.PointA = self.cursor1.PointA + newVector2(0, 0)
-            self.cursor2.PointB = self.cursor1.PointB + newVector2(1, 1)
-            self.cursor2.PointC = self.cursor1.PointC + newVector2(1, 1)
-        end
-    end
-
-    local screenGui = Instance.new('ScreenGui');
-    -- Check for the function directly instead of the executor. More portable.
-    if protect_gui then
-        protect_gui(screenGui)
-    end
-    screenGui.Parent = game:GetService('CoreGui');
-    screenGui.Enabled = true;
-    utility:Instance('ImageButton', {
-        Parent = screenGui,
-        Visible = true,
-        Modal = true,
-        Size = UDim2.new(1,0,1,0),
-        ZIndex = 9999999999,
-        Transparency = 1;
-    })
-
-    utility:Connection(library.unloaded, function()
-        screenGui:Destroy()
-    end)
-
-    utility:Connection(inputservice.InputBegan, function(input, gpe)
-        if self.hasInit then
-            if input.KeyCode == self.toggleKey and not library.opening and not gpe then
-                self:SetOpen(not self.open)
-                task.spawn(function()
-                    library.opening = true;
-                    task.wait(.15);
-                    library.opening = false;
-                end)
-            end
-            if library.open then
-                local hoverObj = utility:GetHoverObject();
-                local hoverObjData = library.drawings[hoverObj];
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    mb1down = true;
-                    button1down:Fire()
-                    if hoverObj and hoverObjData then
-                        hoverObjData.MouseButton1Down:Fire(inputservice:GetMouseLocation())
-                    end
-
-                    -- // Update Sliders Click
-                    if library.draggingSlider ~= nil then
-                        local rel = inputservice:GetMouseLocation() - library.draggingSlider.objects.background.Object.Position;
-                        local val = utility:ConvertNumberRange(rel.X, 0 , library.draggingSlider.objects.background.Object.Size.X, library.draggingSlider.min, library.draggingSlider.max);
-                        library.draggingSlider:SetValue(val)
-                    end
-
-                elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-                    if hoverObj and hoverObjData then
-                        hoverObjData.MouseButton2Down:Fire(inputservice:GetMouseLocation())
-                    end
-                end
-            end
-        end
-    end)
-
-    utility:Connection(inputservice.InputEnded, function(input, gpe)
-        if self.hasInit and library.open then
-            local hoverObj = utility:GetHoverObject();
-            local hoverObjData = library.drawings[hoverObj];
-
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                mb1down = false;
-                button1up:Fire();
-                if hoverObj and hoverObjData then
-                    hoverObjData.MouseButton1Up:Fire(inputservice:GetMouseLocation())
-                end
-            elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-                if hoverObj and hoverObjData then
-                    hoverObjData.MouseButton2Up:Fire(inputservice:GetMouseLocation())
-                end
-            end
-        end
-    end)
-
-    utility:Connection(inputservice.InputChanged, function(input, gpe)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            if library.open then
-                mousemove:Fire(inputservice:GetMouseLocation());
-                updateCursor();
-
-                if library.CurrentTooltip ~= nil then
-                    local mousePos = inputservice:GetMouseLocation()
-                    tooltipObjects.background.Position = UDim2.new(0,mousePos.X + 15,0,mousePos.Y + 15)
-                    tooltipObjects.background.Size = UDim2.new(0,tooltipObjects.text.TextBounds.X + 6 + (library.CurrentTooltip.risky and 60 or 0),0,tooltipObjects.text.TextBounds.Y + 2)
-                end
-
-                local hoverObj = utility:GetHoverObject();
-                for _,v in pairs(library.drawings) do
-                    local hover = hoverObj == v.Object;
-                    if hover and not v.Hover then
-                        v.Hover = true;
-                        v.MouseEnter:Fire(inputservice:GetMouseLocation());
-                    elseif not hover and v.Hover then
-                        v.Hover = false;
-                        v.MouseLeave:Fire(inputservice:GetMouseLocation());
-                    end
-                end
-
-                if mb1down then
-
-                    -- // Update Sliders Drag
-                    if library.draggingSlider ~= nil then
-                        local rel = inputservice:GetMouseLocation() - library.draggingSlider.objects.background.Object.Position;
-                        local val = utility:ConvertNumberRange(rel.X, 0 , library.draggingSlider.objects.background.Object.Size.X, library.draggingSlider.min, library.draggingSlider.max);
-                        library.draggingSlider:SetValue(val)
-                    end
-
-                end
-            end
-        end
-    end)
-    
-    function self:SetOpen(bool)
-        self.open = bool;
-        screenGui.Enabled = bool;
-
-        if bool and library.flags.disablemenumovement then
-            actionservice:BindAction(
-                'FreezeMovement',
-                function()
-                    return Enum.ContextActionResult.Sink
-                end,
-                false,
-                unpack(Enum.PlayerActions:GetEnumItems())
-            )
-        else
-            actionservice:UnbindAction('FreezeMovement');
-        end
-
-        updateCursor();
-        for _,window in pairs(self.windows) do
-            window:SetOpen(bool);
-        end
-
-        library.CurrentTooltip = nil;
-        tooltipObjects.background.Visible = false
-    end
-
-    function self.UpdateThemeColors()
-        for _,v in pairs(library.drawings) do
-            if v.ThemeColor and library.theme[v.ThemeColor] then
-                v.Object.Color = utility:AddRGB(library.theme[v.ThemeColor],fromrgb(v.ThemeColorOffset,v.ThemeColorOffset,v.ThemeColorOffset))
-            end
-            if v.ThemeColorOutline and library.theme[v.ThemeColorOutline] then
-                v.Object.OutlineColor = utility:AddRGB(library.theme[v.ThemeColorOutline],fromrgb(v.OutlineThemeColorOffset,v.OutlineThemeColorOffset,v.OutlineThemeColorOffset))
-            end
-        end
-    end
-
-    function self:SendNotification(message, time, color)
-        time = time or 5
-        if typeof(message) ~= 'string' then
-            return error(string.format('invalid message type, got %s, expected string', typeof(message)))
-        elseif typeof(time) ~= 'number' then
-            return error(string.format('invalid time type, got %s, expected number', typeof(time)))
-        elseif color ~= nil and typeof(color) ~= 'Color3' then
-            return error(string.format('invalid color type, got %s, expected color3', typeof(time)))
-        end
-
-        local notification = {};
-
-        self.notifications[notification] = true
-
-        do
-            local objs = notification;
-            local z = self.zindexOrder.notification;
-
-            notification.holder = utility:Draw('Square', {
-                Position = newUDim2(0, 0, 0, 75);
-                Transparency = 0;
-            })
-            
-            notification.background = utility:Draw('Square', {
-                Size = newUDim2(1,0,1,0);
-                Position = newUDim2(0, -500, 0, 0);
-                Parent = notification.holder;
-                ThemeColor = 'Background';
-                ZIndex = z;
-            })
-
-            notification.border1 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 2';
-                Parent = notification.background;
-                ZIndex = z-1;
-            })
-
-            objs.border2 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 3';
-                Parent = objs.border1;
-                ZIndex = z-2;
-            })
-
-            notification.gradient = utility:Draw('Image', {
-                Size = newUDim2(1,0,1,0);
-                Data = self.images.gradientp90;
-                Parent = notification.background;
-                Transparency = .5;
-                ZIndex = z+1;
-            })
-
-            notification.accentBar = utility:Draw('Square',{
-                Size = newUDim2(0,5,1,4);
-                Position = newUDim2(0,0,0,-2);
-                Parent = notification.background;
-                ThemeColor = color == nil and 'Accent' or '';
-                ZIndex = z+5;
-            })
-
-            notification.text = utility:Draw('Text', {
-                Position = newUDim2(0,13,0,2);
-                ThemeColor = 'Primary Text';
-                Text = message;
-                Outline = true;
-                Font = 2;
-                Size = 13;
-                ZIndex = z+4;
-                Parent = notification.background;
-            })
-
-            if color then
-                notification.accentBar.Color = color;
-            end
-
-        end
-
-        function notification:Remove()
-            library.notifications[notification] = nil;
-            self.holder:Remove();
-            library:UpdateNotifications()
-        end
-
-        task.spawn(function()
-            self:UpdateNotifications();
-            notification.background.Size = newUDim2(0, notification.text.TextBounds.X + 20, 0, 19)
-            task.wait(); -- This is deprecated, use task.wait()
-            utility:Tween(notification.background, 'Position', newUDim2(0,0,0, 0), .1);
-            task.wait(time);
-            for i,v in pairs(notification) do
-                if typeof(v) ~= 'function' then
-                    utility:Tween(v, 'Transparency', 0, .15);
-                end
-            end
-            utility:Tween(notification.background, 'Position', newUDim2(0,-500,0, 0), .25).Completed:Once(notification.Remove)
-        end)
-
-    end
-
-    function self:UpdateNotifications()
-        local i = 0
-        for v in pairs(self.notifications) do
-            utility:Tween(v.holder, 'Position', newUDim2(0,0,0, 75 + (i * 30)), .15)
-            i += 1
-        end
-    end
-
-    function self.NewIndicator(data)
-        local indicator = {
-            title = data.title or 'indicator',
-            enabled = data.enabled or false,
-            position = data.position or newUDim2(0,15,0,300),
-            values = {},
-            objects = {valueObjects = {}},
-            spacing = '   ',
-        };
-
-        table.insert(self.indicators, indicator)
-
-        -- Create Objects --
-        do
-            local z = self.zindexOrder.indicator;
-            local objs = indicator.objects;
-
-            objs.background = utility:Draw('Square', {
-                Size = newUDim2(0, 200, 0, 16);
-                Position = indicator.position;
-                ThemeColor = 'Background';
-                ZIndex = z;
-            })
-
-            objs.border1 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 2';
-                Parent = objs.background;
-                ZIndex = z-1;
-            })
-
-            objs.border2 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 3';
-                Parent = objs.border1;
-                ZIndex = z-2;
-            })
-
-            objs.topborder = utility:Draw('Square', {
-                Size = newUDim2(1,0,0,1);
-                ThemeColor = 'Accent';
-                Parent = objs.background;
-                ZIndex = z+1;
-            })
-
-            objs.textlabel = utility:Draw('Text', {
-                Position = newUDim2(.5,0,0,1);
-                ThemeColor = 'Primary Text';
-                Text = indicator.title;
-                Size = 13;
-                Font = 2;
-                ZIndex = z+2;
-                Center = true;
-                Outline = true;
-                Parent = objs.background;
-            });
-
-        end
-        --------------------
-
-        function indicator:Update()
-            local xSize  = 125
-            local yPos  = 0
-            table.sort(self.values, function(a,b)
-                return a.order < b.order;
-            end)
-
-            for _,v in pairs(self.values) do
-                v.objects.keyLabel.Text = tostring(v.key);
-                v.objects.valueLabel.Text = tostring(v.value);
-            
-                v.objects.valueLabel.Position = newUDim2(1,-(v.objects.valueLabel.TextBounds.X + 3),0,0)
-                v.objects.background.Position = newUDim2(0,0,1,3 + yPos)
-                v.objects.background.Visible = v.enabled
-
-                if v.enabled then
-                    yPos = yPos + 16 + 3
-                    local x = (v.objects.keyLabel.TextBounds.X + 10 + v.objects.valueLabel.TextBounds.X)
-                    if x > xSize then
-                        xSize = x
-                    end
-                end
-            end
-
-            self.objects.background.Size = newUDim2(0,xSize + 8,0,16)
-            self.objects.background.Position = self.position
-        end
-
-        function indicator:AddValue(data)
-            local value = {
-                key = data.key or '',
-                value = data.value or '',
-                order = data.order or #self.values+1,
-                enabled = data.enabled == nil and true or data.enabled,
-                objects = {},
-            }
-
-            table.insert(self.values, value);
-
-            -- Create Objects --
-            do
-                local z = library.zindexOrder.indicator;
-                local objs = value.objects;
-
-                objs.background = utility:Draw('Square', {
-                    Size = newUDim2(1, 0, 0, 16);
-                    ThemeColor = 'Background';
-                    ZIndex = z;
-                    Parent = indicator.objects.background;
-                })
-    
-                objs.border1 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border 2';
-                    Parent = objs.background;
-                    ZIndex = z-1;
-                })
-    
-                objs.border2 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border 3';
-                    Parent = objs.border1;
-                    ZIndex = z-2;
-                })
-    
-                objs.keyLabel = utility:Draw('Text', {
-                    Position = newUDim2(0,3,0,1);
-                    ThemeColor = 'Option Text 2';
-                    Size = 13;
-                    Font = 2;
-                    ZIndex = z+2;
-                    Outline = true;
-                    Parent = objs.background;
-                });
-
-                objs.valueLabel = utility:Draw('Text', {
-                    Position = newUDim2(0,0,0,1);
-                    ThemeColor = 'Option Text 2';
-                    Size = 13;
-                    Font = 2;
-                    ZIndex = z+2;
-                    Outline = true;
-                    Parent = objs.background;
-                });
-
-            end
-            --------------------
-
-            function value:Remove()
-                table.remove(indicator.values, table.find(indicator.values, value))
-                self.objects.background:Remove()
-                table.clear(self)
-                indicator:Update();
-            end
-
-            function value:SetEnabled(bool)
-                if typeof(bool) == 'boolean' then
-                    self.enabled = bool
-                    indicator:Update()
-                end
-            end
-
-            function value:SetValue(str)
-                if typeof(str) == 'string' then
-                    self.value = str
-                    indicator:Update()
-                end
-            end
-
-            function value:SetKey(str)
-                if typeof(str) == 'string' then
-                    self.key = str
-                    indicator:Update()
-                end
-            end
-
-            self:Update()
-            return value
-        end
-
-        function indicator:GetValue(idx)
-            if typeof(idx) == 'number' then
-                return self.values[idx]
-            else
-                for i,v in pairs(self.values) do
-                    if v.key == idx then
-                        return v
-                    end
-                end
-            end
-        end
-
-        function indicator:SetEnabled(bool)
-            if typeof(bool) == 'boolean' then
-                self.enabled = bool;
-                self.objects.background.Visible = bool;
-                self:Update();
-            end
-        end
-
-        function indicator:SetPosition(udim2)
-            if typeof(udim2) == 'UDim2' then
-                self.position = udim2
-                self.objects.background.Position = udim2;
-            end
-        end
-
-        for i,v in pairs(data.values or {}) do
-            indicator:AddValue({key = tostring(i), value = tostring(v)})
-        end
-
-        indicator:SetEnabled(indicator.enabled);
-        return indicator
-    end
-
-    function self.NewWindow(data)
-        local window = {
-            title = data.title or '',
-            selectedTab = nil;
-            tabs = {},
-            objects = {},
-            colorpicker = {
-                objects = {};
-                color = c3new(1,0,0);
-                trans = 0;
-            };
-            dropdown = {
-                objects = {
-                    values = {};
-                };
-                max = 5;
-            }
-        };
-
-        table.insert(library.windows, window);
-
-        ----- Create Objects ----
-        do
-            local size = data.size or newUDim2(0, 525, 0, 650);
-            local position = data.position or newUDim2(0, 250, 0, 150);
-            local objs = window.objects;
-            local z = library.zindexOrder.window;
-
-            objs.background = utility:Draw('Square', {
-                Size = size;
-                Position = position;
-                ThemeColor = 'Background';
-                ZIndex = z;
-            })
-
-            objs.innerBorder1 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 3';
-                ZIndex = z-1;
-                Parent = objs.background;
-            })
-
-            objs.innerBorder2 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 1';
-                ZIndex = z-2;
-                Parent = objs.innerBorder1;
-            })
-
-            objs.midBorder = utility:Draw('Square', {
-                Size = newUDim2(1,10,1,25);
-                Position = newUDim2(0,-5,0,-20);
-                ThemeColor = 'Border 2';
-                ZIndex = z-3;
-                Parent = objs.innerBorder2;
-            })
-
-            objs.outerBorder1 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 1';
-                ZIndex = z-4;
-                Parent = objs.midBorder;
-            })
-
-            objs.outerBorder2 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 3';
-                ZIndex = z-5;
-                Parent = objs.outerBorder1;
-            })
-
-            objs.topBorder = utility:Draw('Square', {
-                Size = newUDim2(1,0,0,1);
-                ThemeColor = 'Accent';
-                ZIndex = z+1;
-                Parent = objs.background;
-            })
-
-            objs.title = utility:Draw('Text', {
-                Position = newUDim2(0,7,0,2);
-                ThemeColor = 'Primary Text';
-                Text = window.title;
-                Font = 2;
-                Size = 13;
-                ZIndex = z+1;
-                Outline = true;
-                Parent = objs.midBorder;
-            })
-
-            objs.groupBackground = utility:Draw('Square', {
-                Size = newUDim2(1,-16,1,-(16+23));
-                Position = newUDim2(0,8,0,8+23);
-                ThemeColor = 'Group Background';
-                ZIndex = z+5;
-                Parent = objs.background;
-            })
-
-            objs.groupInnerBorder = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 1';
-                ZIndex = z+4;
-                Parent = objs.groupBackground;
-            })
-
-            objs.groupOuterBorder = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 3';
-                ZIndex = z+3;
-                Parent = objs.groupInnerBorder;
-            })
-
-            objs.tabHolder = utility:Draw('Square', {
-                Size = newUDim2(1,0,0,20);
-                Position = newUDim2(0,0,0,-21);
-                Parent = objs.groupBackground;
-                Transparency = 0;
-                ZIndex = z+1;
-            })
-
-            objs.columnholder1 = utility:Draw('Square', {
-                Size = newUDim2(.48, 0, .96, 0);
-                Position = newUDim2(.01, 0, .02, 0);
-                Transparency = 0;
-                ZIndex = z+6;
-                Parent = objs.groupBackground;
-            })
-
-            objs.columnholder2 = utility:Draw('Square', {
-                Size = newUDim2(.48, 0, .96, 0);
-                Position = newUDim2(1 - (.48 + .01), 0, .02, 0);
-                Transparency = 0;
-                ZIndex = z+6;
-                Parent = objs.groupBackground;
-            })
-
-
-            objs.dragdetector = utility:Draw('Square',{
-                Size = newUDim2(1,0,1,0);
-                Parent = objs.midBorder;
-                Transparency = 0;
-                ZIndex = z+2;
-            })
-
-            local dragging, mouseStart, objStart;
-
-            utility:Connection(objs.dragdetector.MouseButton1Down, function(pos)
-                dragging = true;
-                mouseStart = newUDim2(0, pos.X, 0, pos.Y);
-                objStart = objs.background.Position;
-            end)
-
-            utility:Connection(button1up, function()
-                dragging = false;
-            end)
-
-            utility:Connection(mousemove, function(pos)
-                if dragging then
-                    if window.open then
-                        objs.background.Position = objStart + newUDim2(0, pos.X, 0, pos.Y) - mouseStart;
-                    else
-                        dragging = false
-                    end
-                end
-            end)
-
-        end
-        -------------------------
-
-        -- Create Color Picker --
-        do
-            -- Objects
-            do
-                local objs = window.colorpicker.objects;
-                local z = library.zindexOrder.colorpicker;
-
-                objs.background = utility:Draw('Square', {
-                    Visible = false;
-                    Size = newUDim2(0,200,0,242);
-                    Position = newUDim2(1,-200,1,10);
-                    ThemeColor = 'Background';
-                    ZIndex = z;
-                    Parent = window.objects.background;
-                })
-
-                objs.border1 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border';
-                    ZIndex = z-1;
-                    Parent = objs.background;
-                })
-
-                objs.border2 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border 1';
-                    ZIndex = z-2;
-                    Parent = objs.border1;
-                })
-
-                objs.border3 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border';
-                    ZIndex = z-3;
-                    Parent = objs.border2;
-                })
-
-                objs.statusText = utility:Draw('Text', {
-                    Position = newUDim2(0,5,0,4);
-                    Text = 'colorpicker_status_text';
-                    ThemeColor = 'Option Text 1';
-                    Size = 13;
-                    Font = 2;
-                    Outline = true;
-                    ZIndex = z+1;
-                    Parent = objs.background;
-                })
-
-                objs.mainColor = utility:Draw('Square', {
-                    Size = newUDim2(0, 175, 0, 175);
-                    Position = newUDim2(0, 5, 0, 25);
-                    Color = c3new(1,0,0);
-                    ZIndex = z+2;
-                    Parent = objs.background;
-                })
-
-                objs.sat1 = utility:Draw('Image', {
-                    Size = newUDim2(1,0,1,0);
-                    Data = utility:Base64Decode("iVBORw0KGgoAAAANSUhEUgAAAaQAAAGkCAQAAADURZm+AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQflBwwSLzK3wl3KAAADrElEQVR42u3TORLCMBBFwT+6/50hMqXSZgonBN0BWCDGYPwqeSWVZPWYVHd0Pc5H86v9areu4Sz9u7XZXT/vvtZtu6dtJtYw525iGya05afnWW17ltPE8fzfTZy/yf3vmCes59xf0Sf/42l3lnvGOyyH+y/bo/X689wCPCYkEBIICYQECAmEBEICIQFCAiGBkEBIgJBASCAkEBIgJBASCAmEBAgJhARCAiEBQgIhgZAAIYGQQEggJEBIICQQEggJEBIICYQEQgKEBEICIYGQACGBkEBIICRASCAkEBIICRASCAmEBAgJhARCAiEBQgIhgZBASICQQEggJBASICQQEggJhAQICYQEQgIhAUICIYGQQEguAQgJhARCAoQEQgIhgZAAIYGQQEggJEBIICQQEggJEBIICYQEQgKEBEICIYGQACGBkEBIgJBASCAkEBIgJBASCAmEBAgJhARCAiEBQgIhgZBASICQQEggJBASICQQEggJhAQICYQEQgKEBEICIYGQACGBkEBIICRASCAkEBIICRASCAmEBEIChARCAiGBkAAhgZBASCAkQEggJBASICQQEggJhAQICYQEQgIhAUICIYGQQEiAkEBIICQQEiAkEBIICYQECAmEBEIChARCAiGBkAAhgZBASCAkQEggJBASCAkQEggJhARCAoQEQgIhgZAAIYGQQEggJEBIICQQEiAkEBIICYQECAmEBEICIQFCAiGBkEBIgJBASCAkEBIgJBASCAmEBAgJhARCAiEBQgIhgZAAIYGQQEggJEBIICQQEggJEBIICYQEQgKEBEICIYGQACGBkEBIICRASCAkEBIgJBASCAmEBAgJhARCAiEBQgIhgZBASICQQEggJBASICQQEggJhAQICYQEQgIhAUICIYGQACGBkEBIICRASCAkEBIICRASCAmEBEIChARCAiGBkAAhgZBASCAkQEggJBASCAkQEggJhAQICYQEQgIhAUICIYGQQEiAkEBIICQQEiAkEBIICYQECAmEBEICIQFCAiGBkEBILgEICYQEQgKEBEICIYGQACGBkEBIICRASCAkEBIICRASCAmEBEIChARCAiGBkAAhgZBASICQQEggJBASICQQEggJhAQICYQEQgIhAUICIYGQQEiAkEBIICQQEiAkEBIICYQECAmEBEIChARCAiGBkAAhgZBASCAkQEggJBASCAkQEggJhARCAoQEQgIhgZAAIYGQQEggJEBIICQQEiAkEBL8lzft9AVFFzN+ywAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMS0wNy0xMlQxODo0Nzo1MCswMDowMIxlM90AAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjEtMDctMTJUMTg6NDc6NTArMDA6MDD9OIthAAAAAElFTkSuQmCC");
-                    ZIndex = z+3;
-                    Parent = objs.mainColor;
-                })
-
-                objs.sat2 = utility:Draw('Image', {
-                    Size = newUDim2(1,0,1,0);
-                    Data = utility:Base64Decode("iVBORw0KGgoAAAANSUhEUgAAAaQAAAGkCAQAAADURZm+AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQflBwwSLyBEeyyCAAAD4klEQVR42u3YwQnAQAhFQTek/5pz9eBtEYzMlBD4PDcRADDBieMjwK3HJwBDghFepx0oEhgSOO0ARQJDAqcdKBJgSGBI4I0EhgQ47cCQwJDAGwlQJDAkcNqBIgGKBIoEhgROO0CRQJFAkQBDAqcdGBI47QBFAkUCQwKnHaBIoEigSKBIgCKBIYHTDhQJUCQwJHDagSIBigSGBE47UCRAkcCQwGkHKBIoEigSGBLgtANDAkMCbyTAkMBpB4oEigQoEhgSOO1AkQBDAqcdKBIoEqBIYEjgtANFUiRQJFAkMCTAaQeKBIoEigQYEjjtQJFAkQBFAkMCpx0oEmBI4LQDRQJFAhQJDAmcdqBIgCKBIoEhAU47UCRQJFAkwJDAaQeKBIYEOO1AkUCRYHuRTAmcduC0A0UCFAkUCQwJnHaAIoEigSKBIQFOO2gvkimBIoE3EhgS4LQDRQJDAqcdoEigSKBIYEiAIYEhwXx+NoAigSGB0w5QJDAkMCQwJKDiZwMoEhgSOO0ARQJFgnlFMiVw2oHTDhQJUCRQJDAkcNoBVZFMCRQJvJHAkACnHSgSKBIoElANSZPAaQdOOzAkwGkHigSGBIYEGBK08LMBFAkUCRQJMCQwJDAkWMjPBlAkMCRw2gG5SKYEigTeSGBIgNMOFAkMCQwJMCRo4WcDKBIYEjjtgFwkUwJFAm8kMCTAaQeKBIoEigRUQ9IkcNqB0w4MCXDagSKBIsHCIpkSOO3AaQeKBCgSKBIYEhgSYEjQws8GUCQwJHDaAblIpgSKBN5IYEiA0w4UCQwJDAkwJGjhZwMoEhgSOO0ARQJDAkMCQwIqfjaAIoEigSIBhgROO5hXJFMCpx047UCRAEUCRQJDAqcdUBXJlECRwBsJDAlw2oEigSKBIgGGBIYEhgSL+dkAigSGBE47QJHAkMBpB4oEGBIYEhgSrOZnAygSKBIoEmBI4LQDRQJFAhQJDAmcdrC8SKYEigTeSGBIgNMOFAkMCZx2gCKBIoEigSEBTjtQJFAkUCTAkMBpB4oEigQoEhgSOO1AkQBDAqcdKBKgSKBIYEjgtAMUCRQJFAkMCXDagSKBIoEiAYYETjtQJFAkQJHAkMBpB4oEGBI47UCRQJEARQJDAqcdoEigSGBI4LQDFAkUCRQJFAkwJHDagSKBIQFOOzAkMCTwRgIMCZx2oEigSIAigSKBIYHTzkcARQJFAkMCnHZgSGBI4I0EGBI47UCRQJEAQwKnHSgSKBKgSGBI4LQDRQIUCRQJDAmcdoAigSGB0w5QJFAkUCQwJMBpB4oEhgROO0CRwJDAkMAbCVAkMCT4gw/reQYigE05fAAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMS0wNy0xMlQxODo0NzozMiswMDowMN2VK3MAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjEtMDctMTJUMTg6NDc6MzIrMDA6MDCsyJPPAAAAAElFTkSuQmCC");
-                    ZIndex = z+4;
-                    Parent = objs.mainColor;
-                })
-
-                objs.colorBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border';
-                    ZIndex = z+1;
-                    Parent = objs.mainColor;
-                })
-
-                objs.mainDetector = utility:Draw('Square',{
-                    Size = newUDim2(1,0,1,0);
-                    Transparency = 0;
-                    ZIndex = z+10;
-                    Parent = objs.mainColor;
-                })
-
-                objs.hue = utility:Draw('Image', {
-                    Size = newUDim2(0,175,0,10);
-                    Position = newUDim2(0,5,0,205);
-                    Data = library.images.colorhue;
-                    ZIndex = z+2;
-                    Parent = objs.background;
-                })
-
-                objs.hueBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border';
-                    ZIndex = z+1;
-                    Parent = objs.hue;
-                })
-
-                objs.hueDetector = utility:Draw('Square',{
-                    Size = newUDim2(1,0,1,0);
-                    Transparency = 0;
-                    ZIndex = z+10;
-                    Parent = objs.hue;
-                })
-
-                objs.transColor = utility:Draw('Square', {
-                    Size = newUDim2(0,10,0,175);
-                    Position = newUDim2(0,185,0,25);
-                    Color = c3new(1,0,0);
-                    ZIndex = z+2;
-                    Parent = objs.background;
-                })
-
-                objs.trans = utility:Draw('Image', {
-                    Size = newUDim2(1,0,1,0);
-                    Data = library.images.colortrans;
-                    ZIndex = z+3;
-                    Parent = objs.transColor;
-                })
-
-                objs.transBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border';
-                    ZIndex = z+1;
-                    Parent = objs.transColor;
-                })
-
-                objs.transDetector = utility:Draw('Square',{
-                    Size = newUDim2(1,0,1,0);
-                    Transparency = 0;
-                    ZIndex = z+10;
-                    Parent = objs.transColor;
-                })
-
-                objs.pointer = utility:Draw('Square', {
-                    Size = newUDim2(0,2,0,2);
-                    Position = newUDim2(0,0,0,0);
-                    Color = c3new(1,1,1);
-                    ZIndex = z+6;
-                    Parent = objs.mainColor;
-                })
-
-                objs.pointerBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    Color = c3new(0,0,0);
-                    ZIndex = z+5;
-                    Parent = objs.pointer;
-                })
-
-                objs.hueSlider = utility:Draw('Square', {
-                    Size = newUDim2(0,1,1,0);
-                    Color = c3new(1,1,1);
-                    ZIndex = z+4;
-                    Parent = objs.hue;
-                })
-
-                objs.hueSliderBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    Color = c3new(0,0,0);
-                    ZIndex = z+3;
-                    Parent = objs.hueSlider;
-                })
-
-                objs.transSlider = utility:Draw('Square', {
-                    Size = newUDim2(1,0,0,1);
-                    Color = c3new(1,1,1);
-                    ZIndex = z+5;
-                    Parent = objs.trans;
-                })
-
-                objs.transSliderBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    Color = c3new(0,0,0);
-                    ZIndex = z+4;
-                    Parent = objs.transSlider;
-                })
-
-                objs.rBackground = utility:Draw('Square', {
-                    Size = newUDim2(0, 60, 0, 15);
-                    Position = newUDim2(0, 5, 1, - 20);
-                    ThemeColor = 'Option Background';
-                    Parent = objs.background;
-                    ZIndex = z+5;
-                })
-
-                objs.rBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    Color = c3new(0,0,0);
-                    ZIndex = z+4;
-                    Parent = objs.rBackground;
-                })
-
-                objs.rText = utility:Draw('Text', {
-                    Position = newUDim2(.5,0,0,0);
-                    Color = c3new(1,.1,.1);
-                    Text = 'R';
-                    Size = 13;
-                    Font = 2;
-                    Outline = true;
-                    Center = true;
-                    ZIndex = z+6;
-                    Parent = objs.rBackground;
-                })
-
-                objs.gBackground = utility:Draw('Square', {
-                    Size = newUDim2(0, 60, 0, 15);
-                    Position = newUDim2(0, 70, 1, - 20);
-                    ThemeColor = 'Option Background';
-                    Parent = objs.background;
-                    ZIndex = z+5;
-                })
-
-                objs.gBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    Color = c3new(0,0,0);
-                    ZIndex = z+4;
-                    Parent = objs.gBackground;
-                })
-
-                objs.gText = utility:Draw('Text', {
-                    Position = newUDim2(.5,0,0,0);
-                    Color = c3new(.1,1,.1);
-                    Text = 'G';
-                    Size = 13;
-                    Font = 2;
-                    Outline = true;
-                    Center = true;
-                    ZIndex = z+6;
-                    Parent = objs.gBackground;
-                })
-
-                objs.bBackground = utility:Draw('Square', {
-                    Size = newUDim2(0, 60, 0, 15);
-                    Position = newUDim2(0, 135, 1, - 20);
-                    ThemeColor = 'Option Background';
-                    Parent = objs.background;
-                    ZIndex = z+5;
-                })
-
-                objs.bBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    Color = c3new(0,0,0);
-                    ZIndex = z+4;
-                    Parent = objs.bBackground;
-                })
-
-                objs.bText = utility:Draw('Text', {
-                    Position = newUDim2(.5,0,0,0);
-                    Color = c3new(.1,.1,1);
-                    Text = 'B';
-                    Size = 13;
-                    Font = 2;
-                    Outline = true;
-                    Center = true;
-                    ZIndex = z+6;
-                    Parent = objs.bBackground;
-                })
-
-                local draggingHue, draggingSat, draggingTrans = false, false, false;
-
-                local function updateSatVal(pos)
-                    if window.colorpicker.selected ~= nil then
-                        local hue, sat, val = window.colorpicker.selected.color:ToHSV()
-                        X = (objs.mainColor.Object.Position.X + objs.mainColor.Object.Size.X) - objs.mainColor.Object.Position.X
-                        Y = (objs.mainColor.Object.Position.Y + objs.mainColor.Object.Size.Y) - objs.mainColor.Object.Position.Y
-                        X = math.clamp((pos.X - objs.mainColor.Object.Position.X) / X, 0, 0.995)
-                        Y = math.clamp((pos.Y - objs.mainColor.Object.Position.Y) / Y, 0, 0.995)
-                        sat, val = 1 - X, 1 - Y;
-                        window.colorpicker.selected:SetColor(fromhsv(hue,sat,val));
-                        window.colorpicker:Visualize(fromhsv(hue, sat, val), window.colorpicker.selected.trans);
-                    end
-                end
-
-                local function updateHue(pos)
-                    if window.colorpicker.selected ~= nil then
-                        local hue, sat, val = window.colorpicker.selected.color:ToHSV()
-                        X = (objs.hue.Object.Position.X + objs.hue.Object.Size.X) - objs.hue.Object.Position.X
-                        X = math.clamp((pos.X - objs.hue.Object.Position.X) / X, 0, 0.995)
-                        hue = 1 - X
-                        window.colorpicker.selected:SetColor(fromhsv(hue,sat,val));
-                        window.colorpicker:Visualize(fromhsv(hue, sat, val), window.colorpicker.selected.trans);
-                    end
-                end
-
-                local function updateTrans(pos)
-                    if window.colorpicker.selected ~= nil then
-                        Y = (objs.trans.Object.Position.Y + objs.trans.Object.Size.Y) - objs.trans.Object.Position.Y
-                        Y = math.clamp((pos.Y - objs.transColor.Object.Position.Y) / Y, 0, 0.995)
-                        window.colorpicker.selected:SetTrans(Y);
-                        window.colorpicker:Visualize(window.colorpicker.selected.color, Y);
-                    end
-                end
-
-                utility:Connection(objs.mainDetector.MouseButton1Down, function(pos)
-                    draggingSat = true;
-                    updateSatVal(pos)
-                end)
-
-                utility:Connection(objs.hueDetector.MouseButton1Down, function(pos)
-                    draggingHue = true;
-                    updateHue(pos)
-                end)
-
-                utility:Connection(objs.transDetector.MouseButton1Down, function(pos)
-                    draggingTrans = true;
-                    updateTrans(pos)
-                end)
-
-                utility:Connection(mousemove, function(pos)
-                    if library.open then
-                        if draggingSat then
-                            updateSatVal(pos)
-                        elseif draggingHue then
-                            updateHue(pos)
-                        elseif draggingTrans then
-                            updateTrans(pos)
-                        end
-                    end
-                end)
-
-                utility:Connection(button1up, function()
-                    draggingSat = false;
-                    draggingHue = false;
-                    draggingTrans = false;
-                end)
-
-            end
-
-            function window.colorpicker:Visualize(c3, a)
-                if typeof(c3) ~= 'Color3' then return end
-                if typeof(a) ~= 'number' then return end
-                local h,s,v = c3:ToHSV();
-                h = h == 0 and 1 or h;
-                self.color = c3;
-                self.trans = a;
-                self.objects.mainColor.Color = fromhsv(h,1,1);
-                self.objects.transColor.Color = fromhsv(h,s,v);
-                self.objects.hueSlider.Position = newUDim2(1 - h, 0,0,0);
-                self.objects.transSlider.Position = newUDim2(0,0,a,0);
-                self.objects.pointer.Position = newUDim2(1 - s, 0, 1 - v, 0);
-                self.objects.statusText.Text = 'Editing : Unknown';
-                if self.selected ~= nil then
-                    local txt = 'Editing : Unknown';
-                    if self.selected.text ~= nil and self.selected.text ~= '' then
-                        txt = tostring(self.selected.text)
-                    elseif self.selected.flag ~= nil and self.selected.flag ~= '' then
-                        txt = tostring(self.selected.flag)
-                    end
-                    self.objects.statusText.Text = tostring(txt);
-                end
-            end
-            
-            window.colorpicker:Visualize(window.colorpicker.color, window.colorpicker.trans)
-
-        end
-        -------------------------
-
-        ---- Create Dropdown ----
-        do
-            -- Default Objects
-            do
-                local objs = window.dropdown.objects;
-                local z = library.zindexOrder.dropdown;
-
-                objs.background = utility:Draw('Square', {
-                    Visible = false;
-                    Size = newUDim2(1,-3,0,50);
-                    Position = newUDim2(0,3,1,0);
-                    ThemeColor = 'Background';
-                    ZIndex = z;
-                    Parent = window.objects.background;
-                })
-
-                objs.border1 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border';
-                    ZIndex = z-1;
-                    Parent = objs.background;
-                })
-
-                objs.border2 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border 1';
-                    ZIndex = z-2;
-                    Parent = objs.border1;
-                })
-
-                objs.border3 = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border';
-                    ZIndex = z-3;
-                    Parent = objs.border2;
-                })
-
-            end
-
-            function window.dropdown:Refresh()
-                if self.selected ~= nil then
-                    local list = self.selected
-                    for idx, value in pairs(list.values) do
-                        local valueObject = self.objects.values[idx]
-                        if valueObject == nil then
-                            valueObject = {};
-                            valueObject.background = utility:Draw('Square', {
-                                Size = newUDim2(1,-4,0,18);
-                                Color = Color3.new(.25,.25,.25);
-                                Transparency = 0;
-                                ZIndex = library.zindexOrder.dropdown+1;
-                                Parent = self.objects.background;
-                            })
-                            valueObject.text = utility:Draw('Text', {
-                                Position = newUDim2(0,3,0,1);
-                                ThemeColor = 'Option Text 2';
-                                Text = tostring(value);
-                                Size = 13;
-                                Font = 2;
-                                ZIndex = library.zindexOrder.dropdown+2;
-                                Parent = valueObject.background;
-                            })
-                            valueObject.connection = utility:Connection(valueObject.background.MouseButton1Down, function()
-                                local currentList = self.selected
-                                if currentList then
-                                    local val = currentList.values[idx]
-                                    local currentSelected = currentList.selected;
-                                    local newSelected = currentList.multi and {} or val;
-                                    
-                                    if currentList.multi then
-                                        for i,v in pairs(currentSelected) do
-                                            if v == "none" then continue end
-                                            newSelected[i] = v;
-                                        end
-                                        if table.find(newSelected, val) then
-                                            table.remove(newSelected, table.find(newSelected, val));
-                                        else
-                                            table.insert(newSelected, val)
-                                        end
-                                    end
-
-                                    currentList:Select(newSelected);
-                                    if not currentList.multi then
-                                        currentList.open = false;
-                                        currentList.objects.openText.Text = '+';
-                                        window.dropdown.selected = nil;
-                                        window.dropdown.objects.background.Visible = false;
-                                    end
-
-                                    for idx, val in pairs(currentList.values) do
-                                        local valueObj = self.objects.values[idx]
-                                        if valueObj then
-                                            valueObj.background.Transparency = (typeof(newSelected) == 'table' and table.find(newSelected, val) or newSelected == val) and 1 or 0
-                                        end
-                                    end
-
-                                end
-                            end)
-                            self.objects.values[idx] = valueObject
-                        end
-                    end
-
-                    for idx, val in pairs(list.values) do
-                        local valueObj = self.objects.values[idx]
-                        if valueObj then
-                            valueObj.background.Transparency = (typeof(list.selected) == 'table' and table.find(list.selected, val) or list.selected == val) and 1 or 0
-                        end
-                    end
-
-                    local y,padding = 2,2;
-                    for idx, obj in pairs(self.objects.values) do
-                        local valueStr = list.values[idx]
-                        obj.background.Visible = valueStr ~= nil
-                        if valueStr ~= nil then
-                            obj.background.Position = newUDim2(0,2,0,y);
-                            obj.text.Text = valueStr;
-                            y = y + obj.background.Object.Size.Y + padding;
-                        end
-                    end
-
-                    self.objects.background.Size = newUDim2(1,-6,0,y);    
-
-                end
-            end
-        
-            window.dropdown:Refresh();
-        end
-        -------------------------
-
-        local function tooltip(option)
-            utility:Connection(option.objects.holder.MouseEnter, function()
-                tooltipObjects.background.Visible = (not (option.tooltip == '' or option.tooltip == nil)) and true or false;
-                tooltipObjects.riskytext.Visible = option.risky;
-                tooltipObjects.text.Position = option.risky and newUDim2(0,60,0,0) or newUDim2(0,3,0,0)
-                tooltipObjects.text.Text = tostring(option.tooltip);
-                library.CurrentTooltip = option;
-            end)
-            utility:Connection(option.objects.holder.MouseLeave, function()
-                if library.CurrentTooltip == option then
-                    library.CurrentTooltip = nil;
-                    tooltipObjects.background.Visible = false
-                end
-            end)
-        end
-
-
-        local visValues = {};
-
-        function window:SetOpen(bool)
-            if typeof(bool) == 'boolean' then
-                self.open = bool;
-
-                local objs = self.objects.background:GetDescendants()
-                table.insert(objs, self.objects.background)
-
-                task.spawn(function()
-                    if not bool then
-                        task.wait(.1);
-                    end
-                    self.objects.background.Visible = bool;
-                end)
-
-                for _,v in pairs(objs) do
-
-                    local proxyObject = library.drawings[v]
-
-                    if proxyObject and proxyObject.Object.Transparency ~= 0 then
-                        task.spawn(function()
-                            if bool then
-                                utility:Tween(proxyObject.Object, 'Transparency', visValues[v] or 1, .1);
-                            else
-                                visValues[v] = proxyObject.Object.Transparency;
-                                utility:Tween(proxyObject.Object, 'Transparency', .05, .1);
-                            end
-                        end)
-                    end
-                end
-            end
-        end
-
-        function window:AddTab(text, order)
-            local tab = {
-                text = text;
-                order = order or #self.tabs+1;
-                callback = function() end;
-                objects = {};
-                sections = {};
-            }
-
-            table.insert(self.tabs, tab);
-
-            --- Create Objects ---
-            do
-                local objs = tab.objects;
-                local z = library.zindexOrder.window + 5;
-
-                objs.background = utility:Draw('Square', {
-                    Size = newUDim2(0,50,1,0);
-                    Parent = self.objects.tabHolder;
-                    ThemeColor = 'Unselected Tab Background';
-                    ZIndex = z;
-                })
-
-                objs.innerBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border 1';
-                    ZIndex = z-1;
-                    Parent = objs.background;
-                })
-    
-                objs.outerBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,2,1,2);
-                    Position = newUDim2(0,-1,0,-1);
-                    ThemeColor = 'Border 3';
-                    ZIndex = z-2;
-                    Parent = objs.innerBorder;
-                })
-
-                objs.topBorder = utility:Draw('Square', {
-                    Size = newUDim2(1,0,0,1);
-                    ThemeColor = 'Unselected Tab Background';
-                    ZIndex = z+1;
-                    Parent = objs.background;
-                })
-
-                objs.text = utility:Draw('Text', {
-                    ThemeColor = 'Unselected Tab Text';
-                    Text = text;
-                    Size = 13;
-                    Font = 2;
-                    ZIndex = z+1;
-                    Outline = true;
-                    Center = true;
-                    Parent = objs.background;
-                })
-
-                utility:Connection(objs.background.MouseButton1Down, function()
-                    tab:Select();
-                end)
-
-            end
-            ----------------------
-
-            function tab:AddSection(text, side, order)
-                local section = {
-                    text = tostring(text);
-                    side = side == nil and 1 or clamp(side,1,2);
-                    order = order or #self.sections+1;
-                    enabled = true;
-                    objects = {};
-                    options = {};
-                };
-
-                table.insert(self.sections, section);
-
-                --- Create Objects ---
-                do
-                    local objs = section.objects;
-                    local z = library.zindexOrder.window+15;
-
-                    objs.background = utility:Draw('Square', {
-                        ThemeColor = 'Section Background';
-                        ZIndex = z;
-                        Parent = window.objects['columnholder'..(section.side)];
-                    })
-
-                    objs.innerBorder = utility:Draw('Square', {
-                        Size = newUDim2(1,2,1,1);
-                        Position = newUDim2(0,-1,0,0);
-                        ThemeColor = 'Border 3';
-                        ZIndex = z-1;
-                        Parent = objs.background;
-                    })
-
-                    objs.outerBorder = utility:Draw('Square', {
-                        Size = newUDim2(1,2,1,1);
-                        Position = newUDim2(0,-1,0,0);
-                        ThemeColor = 'Border 1';
-                        ZIndex = z-2;
-                        Parent = objs.innerBorder;
-                    })
-
-                    objs.topBorder1 = utility:Draw('Square', {
-                        Size = newUDim2(.025,1,0,1);
-                        Position = newUDim2(0,-1,0,0);
-                        ThemeColor = 'Accent';
-                        ZIndex = z+1;
-                        Parent = objs.background;
-                    })
-
-                    objs.topBorder2 = utility:Draw('Square', {
-                        ThemeColor = 'Accent';
-                        ZIndex = z+1;
-                        Parent = objs.background;
-                    })
-
-                    objs.textlabel = utility:Draw('Text', {
-                        Position = newUDim2(.0425,0,0,-7);
-                        ThemeColor = 'Primary Text';
-                        Size = 13;
-                        Font = 2;
-                        ZIndex = z+1;
-                        Parent = objs.background;
-                    })
-
-                    objs.optionholder = utility:Draw('Square',{
-                        Size = newUDim2(1-.03,0,1,-15);
-                        Position = newUDim2(.015,0,0,13);
-                        Transparency = 0;
-                        ZIndex = z+1;
-                        Parent = objs.background;
-                    })
-                    
-                end
-                ----------------------
-
-                function section:SetText(text)
-                    self.text = tostring(text);
-                    self.objects.textlabel.Text = self.text;
-                    local x = self.objects.background.Object.Size.X - self.objects.textlabel.TextBounds.X - 13
-                    self.objects.topBorder2.Size = newUDim2(0, x, 0, 1)
-                    self.objects.topBorder2.Position = newUDim2(1, 1 + -x, 0, 0)
-                end
-
-                function section:UpdateOptions()
-                    table.sort(self.options, function(a,b)
-                        return a.order < b.order
-                    end)
-
-                    local ySize, padding = 15, 0;
-                    for i,option in pairs(self.options) do
-                        option.objects.holder.Visible = option.enabled
-                        if option.enabled then
-                            option.objects.holder.Position = newUDim2(0,0,0,ySize-15);
-                            ySize += option.objects.holder.Object.Size.Y + padding;
-                        end
-                    end
-
-                    self.objects.background.Size = newUDim2(1,0,0,ySize);
-
-                end
-
-                function section:SetEnabled(bool)
-                    if typeof(bool) == 'boolean' then
-                        section.enabled = bool;
-                        tab:UpdateSections();
-                    end
-                end
-
-                ------- Options -------
-
-                -- // Toggle
-                function section:AddToggle(data)
-                    local toggle = {
-                        class = 'toggle';
-                        flag = data.flag;
-                        text = '';
-                        tooltip = '';
-                        order = #self.options+1;
-                        state = false;
-                        risky = false;
-                        callback = function() end;
-                        enabled = true;
-                        options = {};
-                        objects = {};
-                    };
-
-                    local blacklist = {'objects'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) ~= toggle[i] ~= nil then
-                            toggle[i] = v
-                        end
-                    end
-
-                    table.insert(self.options, toggle)
-
-                    if toggle.flag then
-                        library.flags[toggle.flag] = toggle.state;
-                        library.options[toggle.flag] = toggle;
-                    end
-
-                    --- Create Objects ---
-                    do
-                        local objs = toggle.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,17);
-                            Transparency = 0;
-                            ZIndex = z+5;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.background = utility:Draw('Square', {
-                            Size = newUDim2(0,8,0,8);
-                            Position = newUDim2(0,2,0,4);
-                            ThemeColor = 'Option Background';
-                            ZIndex = z+3;
-                            Parent = objs.holder;
-                        })
-
-                        objs.gradient = utility:Draw('Image', {
-                            Size = newUDim2(1,0,1,0);
-                            Data = library.images.gradientp45;
-                            Transparency = .25;
-                            ZIndex = z+4;
-                            Parent = objs.background;
-                        })
-
-                        objs.border1 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 1';
-                            ZIndex = z+2;
-                            Parent = objs.background;
-                        })
-
-                        objs.border2 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z+1;
-                            Parent = objs.border1;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(0,19,0,1);
-                            ThemeColor = 'Option Text 3';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Outline = true;
-                            Parent = objs.holder;
-                        })
-
-                        utility:Connection(objs.holder.MouseEnter, function()
-                            objs.border1.ThemeColor = 'Accent';
-                        end)
-
-                        utility:Connection(objs.holder.MouseLeave, function()
-                            objs.border1.ThemeColor = toggle.state and 'Accent' or 'Option Border 1';
-                        end)
-
-                        utility:Connection(objs.holder.MouseButton1Down, function()
-                            toggle:SetState(not toggle.state);
-                        end)
-
-                    end
-                    ----------------------
-
-                    function toggle:SetState(bool, nocallback)
-                        if typeof(bool) == 'boolean' then
-                            self.state = bool;
-                            if self.flag then
-                                library.flags[self.flag] = bool;
-                            end
-
-                            self.objects.border1.ThemeColor = bool and 'Accent' or (self.objects.holder.Hover and 'Accent' or 'Option Border 1');
-                            self.objects.text.ThemeColor = bool and (self.risky and 'Risky Text Enabled' or 'Option Text 1') or (self.risky and 'Risky Text' or 'Option Text 3');
-                            self.objects.background.ThemeColor = bool and 'Accent' or 'Option Background';
-                            self.objects.background.ThemeColorOffset = bool and -55 or 0
-
-                            if not nocallback then
-                                self.callback(bool);
-                            end
-
-                        end
-                    end
-
-                    function toggle:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                        end
-                    end
-
-                    function toggle:UpdateOptions()
-                        table.sort(self.options, function(a,b)
-                            return a.order < b.order
-                        end)
-
-                        local x, y = 0, 0
-                        for i,option in pairs(self.options) do
-                            option.objects.holder.Visible = option.enabled
-                            if option.enabled then
-                                if option.class == 'color' or option.class == 'bind' then
-                                    option.objects.holder.Position = newUDim2(1,-option.objects.holder.Object.Size.X-x,0,0);
-                                    x = x + option.objects.holder.Object.Size.X;
-                                elseif option.class == 'slider' or option.class == 'list' then
-                                    option.objects.holder.Position = newUDim2(0,0,1,-option.objects.holder.Object.Size.Y-y);
-                                    y = y + option.objects.holder.Object.Size.Y;
-                                end
-                            end
-                        end
-
-                        self.objects.holder.Size = newUDim2(1,0,0,17 + y);
-                        section:UpdateOptions()
-
-                    end
-
-                    -- // Toggle Addons
-                    function toggle:AddColor(data)
-                        local color = {
-                            class = 'color';
-                            flag = data.flag;
-                            text = '';
-                            tooltip = '';
-                            order = #self.options+1;
-                            callback = function() end;
-                            color = Color3.new(1,1,1);
-                            trans = 0;
-                            open = false;
-                            enabled = true;
-                            objects = {};
-                        };
-    
-                        local blacklist = {'objects'};
-                        for i,v in pairs(data) do
-                            if not table.find(blacklist, i) and color[i] ~= nil then
-                                color[i] = v
-                            end
-                        end
-                        
-                        table.insert(self.options, color)
-    
-                        if color.flag then
-                            library.flags[color.flag] = color.color;
-                            library.options[color.flag] = color;
-                        end
-    
-                        --- Create Objects ---
-                        do
-                            local objs = color.objects;
-                            local z = library.zindexOrder.window+25;
-    
-                            objs.holder = utility:Draw('Square', {
-                                Size = newUDim2(0,21,0,17);
-                                Transparency = 0;
-                                ZIndex = z+6;
-                                Parent = self.objects.holder;
-                            })
-    
-                            objs.background = utility:Draw('Square', {
-                                Size = newUDim2(0,15,0,8);
-                                Position = newUDim2(0,4,0,5);
-                                ZIndex = z+3;
-                                Parent = objs.holder;
-                            })
-    
-                            objs.gradient = utility:Draw('Image', {
-                                Size = newUDim2(1,0,1,0);
-                                Data = library.images.gradientp45;
-                                Transparency = .25;
-                                ZIndex = z+4;
-                                Parent = objs.background;
-                            })
-    
-                            objs.border1 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 1';
-                                ZIndex = z+2;
-                                Parent = objs.background;
-                            })
-    
-                            objs.border2 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 2';
-                                ZIndex = z+1;
-                                Parent = objs.border1;
-                            })
-    
-                            utility:Connection(objs.holder.MouseEnter, function()
-                                objs.border1.ThemeColor = 'Accent';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseLeave, function()
-                                objs.border1.ThemeColor = color.state and 'Accent' or 'Option Border 1';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseButton1Down, function()
-                                color:SetOpen(not color.open);
-                            end)
-    
-                        end
-                        ----------------------
-
-    
-                        function color:SetColor(c3, nocallback)
-                            if typeof(c3) == 'Color3' then
-                                local h,s,v = c3:ToHSV(); c3 = fromhsv(h, clamp(s,.005,.995), clamp(v,.005,.995))
-                                self.color = c3;
-                                self.objects.background.Color = c3;
-                                if not nocallback then
-                                    self.callback(c3, self.trans);
-                                end
-                                if self.open then
-                                    window.colorpicker:Visualize(self.color, self.trans);
-                                end
-                                if self.flag then
-                                    library.flags[self.flag] = c3;
-                                end
-                            end
-                        end
-    
-                        function color:SetTrans(trans, nocallback)
-                            if typeof(trans) == 'number' then
-                                self.trans = trans;
-                                if not nocallback then
-                                    self.callback(self.color, trans);
-                                end
-                                if self.open then
-                                    window.colorpicker:Visualize(self.color, self.trans);
-                                end
-                            end
-                        end
-    
-                        function color:SetOpen(bool)
-                            if typeof(bool) == 'boolean' then
-                                self.open = bool
-                                if bool then
-                                    if window.colorpicker.selected then
-                                        window.colorpicker.selected.open = false;
-                                    end
-                                    window.colorpicker.selected = color
-                                    window.colorpicker.objects.background.Parent = self.objects.background;
-                                    window.colorpicker.objects.background.Visible = true;
-                                    window.colorpicker:Visualize(color.color, color.trans)
-                                elseif window.colorpicker.selected == color then
-                                    window.colorpicker.selected = nil;
-                                    window.colorpicker.objects.background.Parent = window.objects.background;
-                                    window.colorpicker.objects.background.Visible = false;
-                                end
-                            end
-                        end
-    
-                        tooltip(color);
-                        color:SetColor(color.color, true);
-                        color:SetTrans(color.trans, true);
-                        self:UpdateOptions();
-                        return color
-                    end
-
-                    function toggle:AddBind(data)
-                        local bind = {
-                            class = 'bind';
-                            flag = data.flag;
-                            text = '';
-                            tooltip = '';
-                            bind = 'none';
-                            mode = 'toggle';
-                            order = #self.options+1;
-                            callback = function() end;
-                            keycallback = function() end;
-                            indicatorValue = library.keyIndicator:AddValue({value = 'value', key = 'key', enabled = false});
-                            noindicator = false;
-                            invertindicator = false;
-                            state = false;
-                            nomouse = false;
-                            enabled = true;
-                            binding = false;
-                            objects = {};
-                        };
-    
-                        local blacklist = {'objects'};
-                        for i,v in pairs(data) do
-                            if not table.find(blacklist, i) and bind[i] ~= nil then
-                                bind[i] = v
-                            end
-                        end
-                        
-                        table.insert(self.options, bind)
-    
-                        if bind.flag then
-                            library.options[bind.flag] = bind;
-                        end
-
-                        if bind.bind == 'none' then
-                            bind.state = true
-                            if bind.flag then
-                                library.flags[bind.flag] = bind.state;
-                            end
-                            bind.callback(true)
-                            local display = bind.state; if bind.invertindicator then display = not bind.state; end
-                            bind.indicatorValue:SetEnabled(display and not bind.noindicator);
-                            bind.indicatorValue:SetKey((bind.text == nil or bind.text == '') and (bind.flag == nil and 'unknown' or bind.flag) or bind.text); -- this is so dumb
-                            bind.indicatorValue:SetValue('[Always]');
-                        end
-    
-                        --- Create Objects ---
-                        do
-                            local objs = bind.objects;
-                            local z = library.zindexOrder.window+25;
-    
-                            objs.holder = utility:Draw('Square', {
-                                Size = newUDim2(0,0,0,17);
-                                Transparency = 0;
-                                ZIndex = z+6;
-                                Parent = self.objects.holder;
-                            })
-    
-                            objs.keyText = utility:Draw('Text', {
-                                ThemeColor = 'Option Text 3';
-                                Size = 13;
-                                Font = 2;
-                                ZIndex = z+1;
-                                Parent = objs.holder;
-                            })
-    
-                            utility:Connection(objs.holder.MouseEnter, function()
-                                objs.keyText.ThemeColor = 'Accent';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseLeave, function()
-                                objs.keyText.ThemeColor = bind.binding and 'Accent' or 'Option Text 3';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseButton1Down, function()
-                                if not bind.binding then
-                                    bind:SetKeyText('...');
-                                    bind.binding = true;
-                                end
-                            end)
-    
-                        end
-                        ----------------------
-    
-                        local c
-                        function bind:SetBind(keybind)
-                            if c then
-                                c:Disconnect();
-                                if bind.flag then
-                                    library.flags[bind.flag] = false;
-                                end
-                                bind.callback(false);
-                            end
-                            local keyName = 'NONE'
-                            self.bind = (keybind and keybind) or keybind or self.bind
-                            if self.bind == Enum.KeyCode.Backspace then
-                                self.bind = 'none';
-
-                                if bind.flag then
-                                    library.flags[bind.flag] = bind.state;
-                                end
-                                self.callback(true)
-                                local display = bind.state; if bind.invertindicator then display = not bind.state; end
-                                bind.indicatorValue:SetEnabled(display and not bind.noindicator);
-                            else
-                                keyName = keyNames[keybind] or keybind.Name or keybind
-                            end
-                            if self.bind ~= 'none' then
-                                bind.state = false
-                                if bind.flag then
-                                    library.flags[bind.flag] = bind.state;
-                                end
-                                self.callback(false)
-                                local display = bind.state; if bind.invertindicator then display = not bind.state; end
-                                bind.indicatorValue:SetEnabled(display and not bind.noindicator);
-                            end
-                            self.keycallback(self.bind);
-                            self:SetKeyText(keyName:upper());
-                            self.indicatorValue:SetKey((self.text == nil or self.text == '') and (self.flag == nil and 'unknown' or self.flag) or self.text); -- this is so dumb
-                            self.indicatorValue:SetValue('['..keyName:upper()..']');
-                            if self.bind == 'none' then
-
-                            end
-                            self.objects.keyText.ThemeColor = self.objects.holder.Hover and 'Accent' or 'Option Text 3';
-                        end
-    
-                        function bind:SetKeyText(str)
-                            str = tostring(str);
-                            self.objects.keyText.Text = '['..str..']';
-                            self.objects.keyText.Position = newUDim2(0, 2, 0, 2);
-                            self.objects.holder.Size = newUDim2(0,self.objects.keyText.TextBounds.X+2,0,17)
-                            toggle:UpdateOptions();
-                        end
-    
-                        utility:Connection(inputservice.InputBegan, function(inp)
-                            if inputservice:GetFocusedTextBox() then
-                                return
-                            elseif bind.binding then
-                                local key = (table.find({Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.MouseButton3}, inp.UserInputType) and not bind.nomouse) and inp.UserInputType
-                                bind:SetBind(key or (not table.find(blacklistedKeys, inp.KeyCode)) and inp.KeyCode)
-                                bind.binding = false
-                            elseif not bind.binding and self.bind == 'none' then
-                                bind.state = true
-                                library.flags[bind.flag] = bind.state
-                                local display = bind.state; if bind.invertindicator then display = not bind.state; end
-                                bind.indicatorValue:SetEnabled(display and not bind.noindicator)
-                            elseif (inp.KeyCode == bind.bind or inp.UserInputType == bind.bind) and not bind.binding then
-                                if bind.mode == 'toggle' then
-                                    bind.state = not bind.state
-                                    if bind.flag then
-                                        library.flags[bind.flag] = bind.state;
-                                    end
-                                    bind.callback(bind.state)
-                                    local display = bind.state; if bind.invertindicator then display = not bind.state; end
-                                    bind.indicatorValue:SetEnabled(display and not bind.noindicator);
-                                elseif bind.mode == 'hold' then
-                                    if bind.flag then
-                                        library.flags[bind.flag] = true;
-                                    end
-                                    bind.indicatorValue:SetEnabled((not bind.invertindicator and true or false) and not bind.noindicator);
-                                    c = utility:Connection(runservice.RenderStepped, function()
-                                        if bind.callback then
-                                            bind.callback(true);
-                                        end
-                                    end)
-                                end
-                            end
-                        end)
-    
-                        utility:Connection(inputservice.InputEnded, function(inp)
-                            if bind.bind ~= 'none' then
-                                if inp.KeyCode == bind.bind or inp.UserInputType == bind.bind then
-                                    if c then
-                                        c:Disconnect();
-                                        if bind.flag then
-                                            library.flags[bind.flag] = false;
-                                        end
-                                        if bind.callback then
-                                            bind.callback(false);
-                                        end
-                                        bind.indicatorValue:SetEnabled(bind.invertindicator and true or false);
-                                    end
-                                end
-                            end
-                        end)
-    
-                        tooltip(bind);
-                        bind:SetBind(bind.bind);
-                        self:UpdateOptions();
-                        return bind
-                    end
-
-                    function toggle:AddSlider(data)
-                        local slider = {
-                            class = 'slider';
-                            flag = data.flag;
-                            suffix = '';
-                            tooltip = '';
-                            order = #self.options+1;
-                            value = 0;
-                            min = 0;
-                            max = 100;
-                            increment = 1;
-                            callback = function() end;
-                            enabled = true;
-                            dragging = false;
-                            focused = false;
-                            objects = {};
-                        };
-    
-                        local blacklist = {'objects', 'dragging'};
-                        for i,v in pairs(data) do
-                            if not table.find(blacklist, i) and (slider[i] ~= nil and typeof(slider[i]) == typeof(v)) then
-                                slider[i] = v;
-                            end
-                        end
-                
-                        table.insert(self.options, slider)
-
-                        if slider.flag then
-                            library.flags[slider.flag] = slider.value;
-                            library.options[slider.flag] = slider;
-                        end
-
-                        --- Create Objects ---
-                        do
-                            local objs = slider.objects;
-                            local z = library.zindexOrder.window+25;
-
-                            objs.holder = utility:Draw('Square', {
-                                Size = newUDim2(1,0,0,20);
-                                Transparency = 0;
-                                ZIndex = z+6;
-                                Parent = toggle.objects.holder;
-                            })
-
-                            objs.background = utility:Draw('Square', {
-                                Size = newUDim2(1,-4,1,-8);
-                                Position = newUDim2(0,2,0,4);
-                                ThemeColor = 'Option Background';
-                                ZIndex = z+2;
-                                Parent = objs.holder;
-                            })
-
-                            objs.slider = utility:Draw('Square', {
-                                Size = newUDim2(0,0,1,0);
-                                ThemeColor = 'Accent';
-                                ZIndex = z+3;
-                                Parent = objs.background;
-                            })
-
-                            objs.border1 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 1';
-                                ZIndex = z+1;
-                                Parent = objs.background;
-                            })
-
-                            objs.border2 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 2';
-                                ZIndex = z;
-                                Parent = objs.border1;
-                            })
-    
-                            objs.gradient = utility:Draw('Image', {
-                                Size = newUDim2(1,0,1,0);
-                                Data = library.images.gradientp90;
-                                Transparency = .65;
-                                ZIndex = z+4;
-                                Parent = objs.background;
-                            })
-    
-                            objs.text = utility:Draw('Text', {
-                                Position = newUDim2(.5,0,0,-1);
-                                ThemeColor = 'Option Text 3';
-                                Size = 13;
-                                Font = 2;
-                                ZIndex = z+5;
-                                Outline = true;
-                                Center = true;
-                                Parent = objs.background;
-                            })
-
-                            utility:Connection(objs.holder.MouseEnter, function()
-                                objs.border1.ThemeColor = 'Accent';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseLeave, function()
-                                objs.border1.ThemeColor = slider.dragging and 'Accent' or 'Option Border 1';
-                            end)
-    
-                            local c;
-                            local inputNumber = '';
-                            utility:Connection(slider.objects.holder.MouseButton1Down, function()
-                                if inputservice:IsKeyDown(Enum.KeyCode.LeftControl) then
-                                    if slider.focused then
-                                        slider.focused = false;
-                                        c:Disconnect();
-                                    else
-                                        objs.text.Text = tostring(slider.value)..tostring(slider.suffix)..'/'..tostring(slider.max)..tostring(slider.suffix)..' []';
-                                        slider.focused = true;
-                                        inputNumber = '';
-                                        c = utility:Connection(inputservice.InputBegan, function(inp)
-                                            if library.numberStrings[inp.KeyCode.Name] then
-                                                local number = library.numberStrings[inp.KeyCode.Name];
-                                                inputNumber = inputNumber..tostring(number);
-                                                objs.text.Text = string.format("%.14g", slider.value) .. tostring(slider.suffix) .. "/" .. slider.max .. tostring(slider.suffix) .. " [" .. inputNumber .. "]";
-                                            elseif inp.KeyCode == Enum.KeyCode.Backspace then
-                                                inputNumber = inputNumber:sub(1,-2);
-                                                objs.text.Text = string.format("%.14g", slider.value)..tostring(slider.suffix)..'/'..slider.max..tostring(slider.suffix)..' ['..inputNumber..']';
-                                            elseif inp.KeyCode == Enum.KeyCode.Return then
-                                                slider:SetValue(tonumber(inputNumber))
-                                                slider.focused = false;
-                                                c:Disconnect();
-                                            elseif inp.KeyCode == Enum.KeyCode.Escape then
-                                                slider:SetValue(slider.value, true)
-                                                slider.focused = false;
-                                                c:Disconnect();
-                                            end
-                                        end)
-                                    end
-                                else
-                                    slider.dragging = true;
-                                    library.draggingSlider = slider;
-                                end
-                            end)
-    
-                            utility:Connection(button1up, function()
-                                objs.border1.ThemeColor = objs.holder.Hover and 'Accent' or 'Option Border 1';
-                                slider.dragging = false;
-                                library.draggingSlider = nil;
-                            end)
-    
-                        end
-                        ----------------------
-    
-                        function slider:SetValue(value, nocallback)
-                            if typeof(value) == 'number' then
-                                local newValue = clamp(self.increment * floor(value/self.increment), self.min, self.max);
-                                local size, pos = self.objects.slider.Size, self.objects.slider.Position;
-    
-                                if self.min >= 0 then
-                                    size = newUDim2((newValue - self.min) / (self.max - self.min), 0, 1, 0);
-                                else
-                                    size = newUDim2(newValue / (self.max - self.min), 0, 1, 0);
-                                    pos = newUDim2((0 - self.min) / (self.max - self.min), 0, 0, 0);
-                                end
-    
-                                utility:Tween(self.objects.slider, 'Size', size, .05, Enum.EasingDirection.Out, Enum.EasingStyle.Quad);
-                                utility:Tween(self.objects.slider, 'Position', pos, .05, Enum.EasingDirection.Out, Enum.EasingStyle.Quad);
-    
-                                self.value = newValue;
-                                library.flags[self.flag] = newValue;
-                                self.objects.text.Text = string.format("%.14g",newValue)..tostring(self.suffix)..'/'..self.max..tostring(self.suffix);
-                                self.objects.text.ThemeColor = (self.min < 0 and newValue == 0 or newValue == self.min)  and (self.risky and 'Risky Text' or 'Option Text 3') or (self.risky and 'Risky Text Enabled' or 'Option Text 1');
-    
-                                if not nocallback then
-                                    self.callback(newValue);
-                                end
-    
-                            end
-                        end
-
-                        tooltip(slider);
-                        slider:SetValue(slider.value, true);
-                        self:UpdateOptions();
-                        return slider
-                    end
-
-                    function toggle:AddList(data)
-                        local list = {
-                            class = 'list';
-                            flag = data.flag;
-                            text = '';
-                            selected = '';
-                            tooltip = '';
-                            order = #self.options+1;
-                            callback = function() end;
-                            enabled = true;
-                            multi = false;
-                            open = false;
-                            values = {};
-                            objects = {};
-                        }
-    
-                        table.insert(self.options, list);
-    
-                        local blacklist = {'objects'};
-                        for i,v in pairs(data) do
-                            if not table.find(blacklist, i) ~= list[i] ~= nil then
-                                list[i] = v
-                            end
-                        end
-    
-                        if list.flag then
-                            library.flags[list.flag] = list.selected;
-                            library.options[list.flag] = list;
-                        end
-    
-                        -- Create Objects --
-                        do
-                            local objs = list.objects;
-                            local z = library.zindexOrder.window+25;
-    
-                            objs.holder = utility:Draw('Square', {
-                                Size = newUDim2(1,0,0,22);
-                                Transparency = 0;
-                                ZIndex = z+6;
-                                Parent = toggle.objects.holder;
-                            })
-    
-                            objs.background = utility:Draw('Square', {
-                                Size = newUDim2(1,-4,1,-8);
-                                Position = newUDim2(0,2,0,4);
-                                ThemeColor = 'Option Background';
-                                ZIndex = z+2;
-                                Parent = objs.holder;
-                            })
-    
-                            objs.border1 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 1';
-                                ZIndex = z+1;
-                                Parent = objs.background;
-                            })
-    
-                            objs.border2 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 2';
-                                ZIndex = z;
-                                Parent = objs.border1;
-                            })
-    
-                            objs.gradient = utility:Draw('Image', {
-                                Size = newUDim2(1,0,1,0);
-                                Data = library.images.gradientp90;
-                                Transparency = .65;
-                                ZIndex = z+4;
-                                Parent = objs.background;
-                            })
-    
-                            objs.inputText = utility:Draw('Text', {
-                                Position = newUDim2(0,4,0,0);
-                                ThemeColor = 'Option Text 2';
-                                Text = 'none',
-                                Size = 13;
-                                Font = 2;
-                                ZIndex = z+5;
-                                Outline = true;
-                                Parent = objs.background;
-                            })
-    
-                            objs.openText = utility:Draw('Text', {
-                                Position = newUDim2(1,-10,0,0);
-                                ThemeColor = 'Option Text 3';
-                                Text = '+';
-                                Size = 13;
-                                Font = 2;
-                                ZIndex = z+5;
-                                Outline = true;
-                                Parent = objs.background;
-                            })
-    
-                            utility:Connection(objs.holder.MouseEnter, function()
-                                objs.border1.ThemeColor = 'Accent';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseLeave, function()
-                                objs.border1.ThemeColor = 'Option Border 1';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseButton1Down, function()
-                                if list.open then
-                                    list.open = false;
-                                    objs.openText.Text = '+';
-                                    if window.dropdown.selected == list then
-                                        window.dropdown.selected = nil;
-                                        window.dropdown.objects.background.Visible = false;
-                                    end
-                                else
-                                    if window.dropdown.selected ~= nil then
-                                        window.dropdown.selected.open = false
-                                    end
-                                    list.open = true;
-                                    objs.openText.Text = '-';
-                                    window.dropdown.selected = list;
-                                    window.dropdown.objects.background.Visible = true;
-                                    window.dropdown.objects.background.Parent = objs.holder;
-                                    window.dropdown:Refresh();
-                                end
-                            end)
-    
-    
-                        end
-                        --------------------
-    
-                        function list:Select(option, nocallback)
-                            option = typeof(option) == 'table' and (self.multi == true and option or (#option == 0 and nil or option[1])) or self.multi == true and {option} or option;
-                            if option ~= nil then
-                                self.selected = option;
-                                local text = typeof(option) == 'table' and (#option == 0 and "none" or table.concat(option, ', ')) or tostring(option);
-                                local label = self.objects.inputText
-                                label.Text = text;
-                                if label.TextBounds.X > self.objects.background.Object.Size.X - 10 then
-                                    local split = text:split('');
-                                    for i = 1,#split do
-                                        label.Text = table.concat(split, '', 1, i)
-                                        if label.TextBounds.X > self.objects.background.Object.Size.X - 10 then
-                                            label.Text = label.Text:sub(1,-6)..'...';
-                                            break
-                                        end
-                                    end
-                                end
-                                if self.flag then
-                                    library.flags[self.flag] = self.selected
-                                end
-                                if not nocallback then
-                                    self.callback(self.selected);
-                                end
-                            end
-                        end
-    
-                        function list:AddValue(value)
-                            table.insert(list.values, tostring(value));
-                            if window.dropdown.selected == list then
-                                window.dropdown:Refresh()
-                            end
-                        end
-    
-                        function list:RemoveValue(value)
-                            if table.find(list.values, value) then
-                                table.remove(list.values, table.find(list.values, value));
-                                if window.dropdown.selected == list then
-                                    window.dropdown:Refresh()
-                                end
-                            end
-                        end
-    
-                        function list:ClearValues()
-                            table.clear(list.values);
-                            if window.dropdown.selected == list then
-                                window.dropdown:Refresh()
-                            end
-                        end
-    
-                        tooltip(list);
-                        list:Select((data.value or data.selected) or (list.multi and 'none' or list.values[1]), true);
-                        self:UpdateOptions();
-                        return list
-                    end
-
-                    tooltip(toggle);
-                    toggle:SetText(toggle.text);
-                    toggle:SetState(toggle.state, true);
-                    self:UpdateOptions();
-                    return toggle
-                end
-
-                -- // Slider
-                function section:AddSlider(data)
-                    local slider = {
-                        class = 'slider';
-                        flag = data.flag;
-                        text = '';
-                        tooltip = '';
-                        suffix = '';
-                        order = #self.options+1;
-                        value = 0;
-                        min = 0;
-                        max = 100;
-                        increment = 1;
-                        callback = function() end;
-                        enabled = true;
-                        dragging = false;
-                        focused = false;
-                        risky = false;
-                        objects = {};
-                    };
-
-                    local blacklist = {'objects', 'dragging'};
-                    for i,v in next, data do
-                        if not table.find(blacklist, i) and (slider[i] ~= nil and typeof(slider[i]) == typeof(v)) then
-                            slider[i] = v;
-                        end
-                    end
-                    
-                    table.insert(self.options, slider)
-
-                    if slider.flag then
-                        library.flags[slider.flag] = slider.value;
-                        library.options[slider.flag] = slider;
-                    end
-
-                    --- Create Objects ---
-                    do
-                        local objs = slider.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,32);
-                            Transparency = 0;
-                            ZIndex = z+4;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.background = utility:Draw('Square', {
-                            Size = newUDim2(1,-4,0,11);
-                            Position = newUDim2(0,2,1,-14);
-                            ThemeColor = 'Option Background';
-                            ZIndex = z+2;
-                            Parent = objs.holder;
-                        })
-
-                        objs.slider = utility:Draw('Square', {
-                            Size = newUDim2(0,0,1,0);
-                            ThemeColor = 'Accent';
-                            ZIndex = z+3;
-                            Parent = objs.background;
-                        })
-
-                        objs.border1 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 1';
-                            ZIndex = z+1;
-                            Parent = objs.background;
-                        })
-
-                        objs.border2 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z;
-                            Parent = objs.border1;
-                        })
-
-                        objs.gradient = utility:Draw('Image', {
-                            Size = newUDim2(1,0,1,0);
-                            Data = library.images.gradientp90;
-                            Transparency = .65;
-                            ZIndex = z+4;
-                            Parent = objs.background;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(0,2,0,1);
-                            ThemeColor = 'Option Text 3';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Outline = true;
-                            Parent = objs.holder;
-                        })
-
-                        objs.plusDetector = utility:Draw('Square', {
-                            Size = newUDim2(0,14,0,14);
-                            Position = newUDim2(1,-28,0,1);
-                            Transparency = 0;
-                            ZIndex = z+5;
-                            Parent = objs.holder;
-                        })
-
-                        objs.minusDetector = utility:Draw('Square', {
-                            Size = newUDim2(0,14,0,14);
-                            Position = newUDim2(1,-14,0,1);
-                            Transparency = 0;
-                            ZIndex = z+5;
-                            Parent = objs.holder;
-                        })
-
-                        objs.plusText = utility:Draw('Text', {
-                            Position = newUDim2(.5,0,0,-1);
-                            ThemeColor = 'Option Text 3';
-                            Text = '+';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+4;
-                            Center = true;
-                            Outline = true;
-                            Parent = objs.plusDetector;
-                        })
-
-                        objs.minusText = utility:Draw('Text', {
-                            Position = newUDim2(.5,0,0,-1);
-                            ThemeColor = 'Option Text 3';
-                            Text = '-';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+4;
-                            Center = true;
-                            Outline = true;
-                            Parent = objs.minusDetector;
-                        })
-
-                        utility:Connection(objs.holder.MouseEnter, function()
-                            objs.border1.ThemeColor = 'Accent';
-                        end)
-
-                        utility:Connection(objs.holder.MouseLeave, function()
-                            objs.border1.ThemeColor = slider.dragging and 'Accent' or 'Option Border 1';
-                        end)
-
-                        utility:Connection(slider.objects.plusDetector.MouseButton1Down,function()
-                            slider:SetValue(slider.value + (inputservice:IsKeyDown(Enum.KeyCode.LeftShift) and 10 or slider.increment))
-                        end)
-    
-                        utility:Connection(slider.objects.minusDetector.MouseButton1Down,function()
-                            slider:SetValue(slider.value - (inputservice:IsKeyDown(Enum.KeyCode.LeftShift) and 10 or slider.increment))
-                        end)
-
-
-                        local c;
-                        local inputNumber = '';
-                        utility:Connection(slider.objects.holder.MouseButton1Down, function()
-                            if inputservice:IsKeyDown(Enum.KeyCode.LeftControl) then
-                                if slider.focused then
-                                    slider.focused = false;
-                                    c:Disconnect();
-                                else
-                                    objs.text.Text = slider.text..': '..tostring(slider.value)..tostring(slider.suffix)..' []';
-                                    slider.focused = true;
-                                    inputNumber = '';
-                                    c = utility:Connection(inputservice.InputBegan, function(inp)
-                                        if library.numberStrings[inp.KeyCode.Name] then
-                                            local number = library.numberStrings[inp.KeyCode.Name];
-                                            inputNumber = inputNumber..tostring(number);
-                                            objs.text.Text = slider.text..': '..string.format("%.14g",slider.value)..tostring(slider.suffix)..' ['..inputNumber..']';
-                                        elseif inp.KeyCode == Enum.KeyCode.Backspace then
-                                            inputNumber = inputNumber:sub(1,-2);
-                                            objs.text.Text = slider.text..': '..string.format("%.14g",slider.value)..tostring(slider.suffix)..' ['..inputNumber..']';
-                                        elseif inp.KeyCode == Enum.KeyCode.Return then
-                                            slider:SetValue(tonumber(inputNumber))
-                                            slider.focused = false;
-                                            c:Disconnect();
-                                        elseif inp.KeyCode == Enum.KeyCode.Escape then
-                                            slider:SetValue(slider.value, true)
-                                            slider.focused = false;
-                                            c:Disconnect();
-                                        end
-                                    end)
-
-                                end
-
-
-                            else
-                                slider.dragging = true;
-                                library.draggingSlider = slider;
-                            end
-                        end)
-
-                        utility:Connection(button1up, function()
-                            objs.border1.ThemeColor = objs.holder.Hover and 'Accent' or 'Option Border 1';
-                            slider.dragging = false;
-                            library.draggingSlider = nil;
-                        end)
-
-                    end
-                    ----------------------
-
-                    function slider:SetValue(value, nocallback)
-                        if typeof(value) == 'number' then
-                            local newValue = clamp(self.increment * floor(value/self.increment), self.min, self.max);
-                            local size, pos = self.objects.slider.Size, self.objects.slider.Position;
-
-                            if self.min >= 0 then
-                                size = newUDim2((newValue - self.min) / (self.max - self.min), 0, 1, 0);
-                            else
-                                size = newUDim2(newValue / (self.max - self.min), 0, 1, 0);
-                                pos = newUDim2((0 - self.min) / (self.max - self.min), 0, 0, 0);
-                            end
-
-                            utility:Tween(self.objects.slider, 'Size', size, .05, Enum.EasingDirection.Out, Enum.EasingStyle.Quad);
-                            utility:Tween(self.objects.slider, 'Position', pos, .05, Enum.EasingDirection.Out, Enum.EasingStyle.Quad);
-
-                            self.value = newValue;
-                            library.flags[self.flag] = newValue;
-                            self.objects.text.Text = slider.text..': '..string.format("%.14g",newValue)..tostring(self.suffix);
-                            self.objects.text.ThemeColor = (self.min < 0 and newValue == 0 or newValue == self.min)  and (self.risky and 'Risky Text' or 'Option Text 3') or (self.risky and 'Risky Text Enabled' or 'Option Text 1');
-
-                            if not nocallback then
-                                self.callback(newValue);
-                            end
-
-                        end
-                    end
-
-                    function slider:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str..': '..tostring(self.value)..tostring(self.suffix);
-                        end
-                    end
-
-                    tooltip(slider);
-                    slider:SetText(slider.text);
-                    slider:SetValue(slider.value, true);
-                    self:UpdateOptions();
-                    return slider
-                end
-
-                -- // Button
-                function section:AddButton(data)
-                    local button = {
-                        class = 'button';
-                        flag = data.flag;
-                        text = '';
-                        suffix = '';
-                        tooltip = '';
-                        order = #self.options+1;
-                        callback = function() end;
-                        confirm = false;
-                        enabled = true;
-                        risky = false;
-                        objects = {};
-                        subbuttons = {};
-                    };
-
-                    local blacklist = {'objects'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) and button[i] ~= nil then
-                            button[i] = v;
-                        end
-                    end
-        
-                    table.insert(self.options, button)
-
-                    if button.flag then
-                        library.options[button.flag] = button;
-                    end
-
-                    --- Create Objects ---
-                    do
-                        local objs = button.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,22);
-                            Transparency = 0;
-                            ZIndex = z+4;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.background = utility:Draw('Square', {
-                            Size = newUDim2(1,-4,0,14);
-                            Position = newUDim2(0,2,0,4);
-                            ThemeColor = 'Option Background';
-                            ZIndex = z+2;
-                            Parent = objs.holder;
-                        })
-
-                        objs.border1 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 1';
-                            ZIndex = z+1;
-                            Parent = objs.background;
-                        })
-
-                        objs.border2 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z;
-                            Parent = objs.border1;
-                        })
-
-                        objs.gradient = utility:Draw('Image', {
-                            Size = newUDim2(1,0,1,0);
-                            Data = library.images.gradientp90;
-                            Transparency = .65;
-                            ZIndex = z+3;
-                            Parent = objs.background;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(.5,0,0,0);
-                            ThemeColor = 'Option Text 3';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+4;
-                            Outline = true;
-                            Center = true;
-                            Parent = objs.background;
-                        })
-
-                        utility:Connection(objs.holder.MouseEnter, function()
-                            objs.border1.ThemeColor = 'Accent';
-                        end)
-
-                        utility:Connection(objs.holder.MouseLeave, function()
-                            objs.border1.ThemeColor = 'Option Border 1';
-                            objs.text.ThemeColor = self.risky and 'Risky Text' or 'Option Text 3';
-                            objs.background.ThemeColor = 'Option Background';
-                            objs.background.ThemeColorOffset = 0;
-                        end)
-
-                        utility:Connection(objs.holder.MouseButton1Up, function()
-                            objs.text.ThemeColor = self.risky and 'Risky Text' or  'Option Text 3';
-                            objs.background.ThemeColor = 'Option Background';
-                            objs.background.ThemeColorOffset = 0;
-                        end)
-
-                        local clicked, counting = false, false
-                        utility:Connection(objs.holder.MouseButton1Down, function()
-                            objs.text.ThemeColor = self.risky and 'Risky Text Enabled' or 'Option Text 2';
-                            objs.background.ThemeColor = 'Accent';
-                            objs.background.ThemeColorOffset = -95;
-
-                            task.spawn(function() -- this is ugly and i do not care :)
-                                if button.confirm then
-                                    if clicked then
-                                        clicked = false
-                                        counting = false
-                                        objs.text.Text = button.text
-                                        button.callback()
-                                    else
-                                        clicked = true
-                                        counting = true
-                                        for i = 3,1,-1 do
-                                            if not counting then
-                                                break
-                                            end
-                                            objs.text.Text = 'Confirm '..button.text..'? '..tostring(i)
-                                            task.wait(1)
-                                        end
-                                        clicked = false
-                                        counting = false
-                                        objs.text.Text = button.text
-                                    end
-                                else
-                                    button.callback()
-                                end
-                            end)
-
-                        end)
-
-                    end
-                    ----------------------
-                    function button:AddButton(data)
-                        local button = {
-                            class = 'button';
-                            flag = data.flag;
-                            text = '';
-                            suffix = '';
-                            tooltip = '';
-                            order = #self.subbuttons+1;
-                            callback = function() end;
-                            confirm = false;
-                            enabled = true;
-                            objects = {};
-                        };
-    
-                        local blacklist = {'objects'};
-                        for i,v in pairs(data) do
-                            if not table.find(blacklist, i) and button[i] ~= nil then
-                                button[i] = v;
-                            end
-                        end
-            
-                        table.insert(self.subbuttons, button)
-    
-                        if button.flag then
-                            library.options[button.flag] = button;
-                        end
-    
-                        --- Create Objects ---
-                        do
-                            local objs = button.objects;
-                            local z = library.zindexOrder.window+25;
-    
-                            objs.holder = utility:Draw('Square', {
-                                Size = newUDim2(1,0,1,0);
-                                Transparency = 0;
-                                ZIndex = z+5;
-                                Parent = self.objects.holder;
-                            })
-    
-                            objs.background = utility:Draw('Square', {
-                                Size = newUDim2(1,-4,1,-8);
-                                Position = newUDim2(0,2,0,4);
-                                ThemeColor = 'Option Background';
-                                ZIndex = z+2;
-                                Parent = objs.holder;
-                            })
-    
-                            objs.border1 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 1';
-                                ZIndex = z+1;
-                                Parent = objs.background;
-                            })
-    
-                            objs.border2 = utility:Draw('Square', {
-                                Size = newUDim2(1,2,1,2);
-                                Position = newUDim2(0,-1,0,-1);
-                                ThemeColor = 'Option Border 2';
-                                ZIndex = z;
-                                Parent = objs.border1;
-                            })
-    
-                            objs.gradient = utility:Draw('Image', {
-                                Size = newUDim2(1,0,1,0);
-                                Data = library.images.gradientp90;
-                                Transparency = .65;
-                                ZIndex = z+3;
-                                Parent = objs.background;
-                            })
-    
-                            objs.text = utility:Draw('Text', {
-                                Position = newUDim2(.5,0,0,0);
-                                ThemeColor = 'Option Text 3';
-                                Size = 13;
-                                Font = 2;
-                                ZIndex = z+4;
-                                Outline = true;
-                                Center = true;
-                                Parent = objs.background;
-                            })
-    
-                            utility:Connection(objs.holder.MouseEnter, function()
-                                objs.border1.ThemeColor = 'Accent';
-                            end)
-    
-                            utility:Connection(objs.holder.MouseLeave, function()
-                                objs.border1.ThemeColor = 'Option Border 1';
-                                objs.text.ThemeColor = self.risky and 'Risky Text' or 'Option Text 3';
-                                objs.background.ThemeColor = 'Option Background';
-                                objs.background.ThemeColorOffset = 0;
-                            end)
-    
-                            utility:Connection(objs.holder.MouseButton1Up, function()
-                                objs.text.ThemeColor = self.risky and 'Risky Text' or 'Option Text 3';
-                                objs.background.ThemeColor = 'Option Background';
-                                objs.background.ThemeColorOffset = 0;
-                            end)
-    
-                            local clicked, counting = false, false
-                            utility:Connection(objs.holder.MouseButton1Down, function()
-                                objs.text.ThemeColor = self.risky and 'Risky Text Enabled' or 'Option Text 2';
-                                objs.background.ThemeColor = 'Accent';
-                                objs.background.ThemeColorOffset = -95;
-    
-                                task.spawn(function() -- this is ugly and i do not care :)
-                                    if button.confirm then
-                                        if clicked then
-                                            clicked = false
-                                            counting = false
-                                            objs.text.Text = button.text
-                                            button.callback()
-                                        else
-                                            clicked = true
-                                            counting = true
-                                            for i = 3,1,-1 do
-                                                if not counting then
-                                                    break
-                                                end
-                                                objs.text.Text = 'Confirm '..button.text..'? '..tostring(i)
-                                            task.wait(1)
-                                            end
-                                            clicked = false
-                                            counting = false
-                                            objs.text.Text = button.text
-                                        end
-                                    else
-                                        button.callback()
-                                    end
-                                end)
-    
-                            end)
-    
-                        end
-                        ----------------------
-    
-                        function button:SetText(str)
-                            if typeof(str) == 'string' then
-                                self.text = str;
-                                self.objects.text.Text = str;
-                            end
-                        end
-    
-                        tooltip(button);
-                        button:SetText(button.text);
-                        self:UpdateOptions();
-                        return button
-                    end
-                    ----------------------
-
-                    function button:UpdateOptions() -- this so dumb XD
-                        local buttons = 1 + #self.subbuttons;
-                        local buttonSize = (1 / buttons) - .005;
-                        self.objects.background.Size = newUDim2(buttonSize,-4,0,14);
-                        for i,v in pairs(self.subbuttons) do
-                            v.objects.holder.Size = newUDim2(buttonSize,0,1,0);
-                            v.objects.holder.Position = newUDim2(i * buttonSize + .01, 0, 0, 0)
-                        end
-                    end
-
-                    function button:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                        end
-                    end
-
-                    tooltip(button);
-                    button:SetText(button.text);
-                    self:UpdateOptions();
-                    return button
-                end
-
-                -- // Separator
-                function section:AddSeparator(data)
-                    local separator = {
-                        class = 'separator';
-                        flag = data.flag;
-                        text = '';
-                        order = #self.options+1;
-                        enabled = true;
-                        objects = {};
-                    };
-
-                    local blacklist = {'objects', 'dragging'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) and (separator[i] ~= nil and typeof(separator[i]) == typeof(v)) then
-                            separator[i] = v;
-                        end
-                    end
-        
-                    table.insert(self.options, separator)
-
-                    --- Create Objects ---
-                    do
-                        local objs = separator.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,18);
-                            Transparency = 0;
-                            ZIndex = z;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.line1 = utility:Draw('Square', {
-                            Position = newUDim2(0,0,0,1);
-                            ThemeColor = 'Option Background';
-                            ZIndex = z+1;
-                            Parent = objs.holder;
-                        })
-
-                        objs.line2 = utility:Draw('Square', {
-                            Position = newUDim2(0,0,0,1);
-                            ThemeColor = 'Option Background';
-                            ZIndex = z+1;
-                            Parent = objs.holder;
-                        })
-
-                        objs.border1 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z;
-                            Parent = objs.line1;
-                        })
-
-                        objs.border2 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z;
-                            Parent = objs.line2;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(.5,0,0,1);
-                            ThemeColor = 'Option Text 2';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z;
-                            Outline = true;
-                            Center = true;
-                            Parent = objs.holder;
-                        })
-
-                    end
-                    ----------------------
-
-                    function separator:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                            local xScale = ( 1- utility:ConvertNumberRange(self.objects.text.TextBounds.X, 0, self.objects.holder.Object.Size.X, 0, 1)) / 2 - (str == '' and 0 or .04)
-                            self.objects.line1.Size = newUDim2(xScale, 0, 0, 1)
-                            self.objects.line2.Size = newUDim2(xScale, 0, 0, 1)
-                            self.objects.line1.Position = newUDim2(0,1,.5,-1)
-                            self.objects.line2.Position = newUDim2(1 - self.objects.line2.Size.X.Scale,-1,.5,-1)
-                        end
-                    end
-
-                    separator:SetText(separator.text);
-                    self:UpdateOptions();
-                    return separator
-                end
-
-                -- // Color Picker
-                function section:AddColor(data)
-                    local color = {
-                        class = 'color';
-                        flag = data.flag;
-                        text = '';
-                        tooltip = '';
-                        order = #self.options+1;
-                        callback = function() end;
-                        color = Color3.new(1,1,1);
-                        trans = 0;
-                        open = false;
-                        enabled = true;
-                        risky = false;
-                        objects = {};
-                    };
-
-                    local blacklist = {'objects'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) and color[i] ~= nil then
-                            color[i] = v
-                        end
-                    end
-                    
-                    table.insert(self.options, color)
-
-                    if color.flag then
-                        library.flags[color.flag] = color.color;
-                        library.options[color.flag] = color;
-                    end
-
-                    --- Create Objects ---
-                    do
-                        local objs = color.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,19);
-                            Transparency = 0;
-                            ZIndex = z+5;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.background = utility:Draw('Square', {
-                            Size = newUDim2(0,15,0,8);
-                            Position = newUDim2(1,-16,0,5);
-                            ZIndex = z+3;
-                            Parent = objs.holder;
-                        })
-
-                        objs.gradient = utility:Draw('Image', {
-                            Size = newUDim2(1,0,1,0);
-                            Data = library.images.gradientp45;
-                            Transparency = .25;
-                            ZIndex = z+4;
-                            Parent = objs.background;
-                        })
-
-                        objs.border1 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 1';
-                            ZIndex = z+2;
-                            Parent = objs.background;
-                        })
-
-                        objs.border2 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z+1;
-                            Parent = objs.border1;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(0,2,0,2);
-                            ThemeColor = color.risky and 'Risky Text Enabled' or 'Option Text 3';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Outline = true;
-                            Parent = objs.holder;
-                        })
-
-                        utility:Connection(objs.holder.MouseEnter, function()
-                            objs.border1.ThemeColor = 'Accent';
-                        end)
-
-                        utility:Connection(objs.holder.MouseLeave, function()
-                            objs.border1.ThemeColor = color.state and 'Accent' or 'Option Border 1';
-                        end)
-
-                        utility:Connection(objs.holder.MouseButton1Down, function()
-                            color:SetOpen(not color.open);
-                        end)
-
-                    end
-                    ----------------------
-
-                    function color:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                        end
-                    end
-
-                    function color:SetColor(c3, nocallback)
-                        if typeof(c3) == 'Color3' then
-                            local h,s,v = c3:ToHSV(); c3 = fromhsv(h, clamp(s,.005,.995), clamp(v,.005,.995));
-                            self.color = c3;
-                            self.objects.background.Color = c3;
-                            if not nocallback then
-                                self.callback(c3, self.trans);
-                            end
-                            if self.open then
-                                window.colorpicker:Visualize(self.color, self.trans);
-                            end
-                            if self.flag then
-                                library.flags[self.flag] = c3;
-                            end
-                        end
-                    end
-
-                    function color:SetTrans(trans, nocallback)
-                        if typeof(trans) == 'number' then
-                            self.trans = trans;
-                            if not nocallback then
-                                self.callback(self.color, trans);
-                            end
-                            if self.open then
-                                window.colorpicker:Visualize(self.color, self.trans);
-                            end
-                        end
-                    end
-
-                    function color:SetOpen(bool)
-                        if typeof(bool) == 'boolean' then
-                            self.open = bool
-                            if bool then
-                                if window.colorpicker.selected then
-                                    window.colorpicker.selected.open = false;
-                                end
-                                window.colorpicker.selected = color
-                                window.colorpicker.objects.background.Parent = self.objects.background;
-                                window.colorpicker.objects.background.Visible = true;
-                                window.colorpicker:Visualize(color.color, color.trans)
-                            elseif window.colorpicker.selected == color then
-                                window.colorpicker.selected = nil;
-                                window.colorpicker.objects.background.Parent = window.objects.background;
-                                window.colorpicker.objects.background.Visible = false;
-                            end
-                        end
-                    end
-
-                    tooltip(color);
-                    color:SetText(color.text);
-                    color:SetColor(color.color, true);
-                    color:SetTrans(color.trans, true);
-                    self:UpdateOptions();
-                    return color
-                end
-
-                -- // Text Box
-                function section:AddBox(data)
-                    local box = {
-                        class = 'box';
-                        flag = data.flag;
-                        text = '';
-                        input = '';
-                        order = #self.options+1;
-                        callback = function() end;
-                        enabled = true;
-                        focused = false;
-                        risky = false;
-                        objects = {};
-                    };
-
-                    local blacklist = {'objects', 'dragging'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) and box[i] ~= nil then
-                            box[i] = v;
-                        end
-                    end
-                    
-                    table.insert(self.options, box)
-
-                    if box.flag then
-                        library.flags[box.flag] = box.input;
-                        library.options[box.flag] = box;
-                    end
-
-                    --- Create Objects ---
-                    do
-                        local objs = box.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,37);
-                            Transparency = 0;
-                            ZIndex = z+4;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.background = utility:Draw('Square', {
-                            Size = newUDim2(1,-4,0,15);
-                            Position = newUDim2(0,2,1,-17);
-                            ThemeColor = 'Option Background';
-                            ZIndex = z+2;
-                            Parent = objs.holder;
-                        })
-
-                        objs.border1 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 1';
-                            ZIndex = z+1;
-                            Parent = objs.background;
-                        })
-
-                        objs.border2 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z;
-                            Parent = objs.border1;
-                        })
-
-                        objs.gradient = utility:Draw('Image', {
-                            Size = newUDim2(1,0,1,0);
-                            Data = library.images.gradientp90;
-                            Transparency = .65;
-                            ZIndex = z+4;
-                            Parent = objs.background;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(0,2,0,2);
-                            ThemeColor = box.risky and 'Risky Text Enabled' or 'Option Text 2';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Outline = true;
-                            Parent = objs.holder;
-                        })
-
-                        objs.inputText = utility:Draw('Text', {
-                            Position = newUDim2(0,2,0,0);
-                            ThemeColor = 'Option Text 2';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+5;
-                            Outline = true;
-                            Parent = objs.background;
-                        })
-
-                        utility:Connection(objs.holder.MouseEnter, function()
-                            objs.border1.ThemeColor = 'Accent';
-                        end)
-
-                        utility:Connection(objs.holder.MouseLeave, function()
-                            objs.border1.ThemeColor = 'Option Border 1';
-                        end)
-
-                        utility:Connection(objs.holder.MouseButton1Down, function()
-                            if box.focused then
-                                box:ReleaseFocus();
-                                actionservice:UnbindAction('FreezeMovement');
-                            else
-                                actionservice:BindAction(
-                                    'FreezeMovement',
-                                    function()
-                                        return Enum.ContextActionResult.Sink
-                                    end,
-                                    false,
-                                    unpack(Enum.PlayerActions:GetEnumItems())
-                                )
-                                box:CaptureFocus(inputservice:IsKeyDown(Enum.KeyCode.LeftControl));
-                                if inputservice:IsKeyDown(Enum.KeyCode.LeftControl) then
-                                    objs.inputText.Text = '';
-                                end
-                            end
-                        end)
-
-                    end
-                    ----------------------
-
-                    function box:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                        end
-                    end
-
-                    function box:SetInput(str, nocallback)
-                        if typeof(str) == 'string' then
-                            self.input = str;
-                            self.objects.inputText.Text = str;
-                            if not nocallback then
-                                self.callback(str);
-                            end
-                            if self.flag then
-                                library.flags[self.flag] = str;
-                            end
-                        end
-                    end
-
-                    local c
-                    local input = box.input;
-                    function box:CaptureFocus(clear)
-                        box.focused = true
-
-                        if clear then
-                            input = '';
-                        end
-
-                        self.objects.inputText.ThemeColor = 'Option Text 1';
-                        c = utility:Connection(inputservice.InputBegan, function(inp)
-                            if inp.KeyCode == Enum.KeyCode.Return or inp.UserInputType == Enum.UserInputType.MouseButton1 then
-                                box:ReleaseFocus(true);
-                            elseif inp.KeyCode == Enum.KeyCode.Escape then
-                                input = self.input
-                                self.objects.inputText.Text = input;
-                                box:ReleaseFocus();
-                            elseif inp.KeyCode == Enum.KeyCode.Backspace then
-                                input = input:sub(1,-2);
-                                self.objects.inputText.Text = input;
-                            elseif #inp.KeyCode.Name == 1 or table.find(whitelistedBoxKeys, inp.KeyCode) or inp.KeyCode.Name == 'Space' or inp.KeyCode.Name == 'Minus' or inp.KeyCode.Name == 'Equals' or inp.KeyCode.Name == 'Backquote' then
-                                local wlIdx = table.find(whitelistedBoxKeys, inp.KeyCode)
-                                local keyString = inp.KeyCode.Name == 'Space' and ' ' or inp.KeyCode.Name == 'Minus' and '_' or inp.KeyCode.Name == 'Equals' and '+' or inp.KeyCode.Name == 'Backquote' and '~' or wlIdx ~= nil and tostring(wlIdx-1) or inp.KeyCode.Name
-                                if not (inputservice:IsKeyDown(Enum.KeyCode.LeftShift) and not inputservice:IsKeyDown(Enum.KeyCode.RightShift)) then
-                                    keyString = keyString:lower();
-                                    if inp.KeyCode.Name == 'Minus' then
-                                        keyString = '-'
-                                    elseif inp.KeyCode.Name == 'Equals' then
-                                        keyString = '='
-                                    elseif inp.KeyCode.Name == 'Backquote' then
-                                        keyString = '`'
-                                    end
-                                else
-                                    if keyString == '1' then
-                                        keyString = '!'
-                                    elseif keyString == '2' then
-                                        keyString = '@'
-                                    elseif keyString == '3' then
-                                        keyString = '#'
-                                    elseif keyString == '4' then
-                                        keyString = '$'
-                                    elseif keyString == '5' then
-                                        keyString = '%'
-                                    elseif keyString == '6' then
-                                        keyString = '^'
-                                    elseif keyString == '7' then
-                                        keyString = '&'
-                                    elseif keyString == '8' then
-                                        keyString = '*'
-                                    elseif keyString == '9' then
-                                        keyString = '('
-                                    elseif keyString == '0' then
-                                        keyString = ')'
-                                    end
-                                end
-                                input = input..keyString;
-                                self.objects.inputText.Text = input;
-                            end
-                        end)
-
-                    end
-
-                    function box:ReleaseFocus(apply)
-                        box.focused = false;
-                        self.objects.inputText.ThemeColor = 'Option Text 2';
-                        if apply then
-                            box:SetInput(input);
-                        end
-                        c:Disconnect();
-                    end
-
-                    tooltip(box);
-                    box:SetText(box.text);
-                    box:SetInput(box.input, true);
-                    self:UpdateOptions();
-                    return box
-                end
-
-                -- // Keybind
-                function section:AddBind(data)
-                    local bind = {
-                        class = 'bind';
-                        flag = data.flag;
-                        text = '';
-                        tooltip = '';
-                        bind = 'none';
-                        mode = 'toggle';
-                        order = #self.options+1;
-                        callback = function() end;
-                        keycallback = function() end;
-                        indicatorValue = library.keyIndicator:AddValue({value = 'value', key = 'key', enabled = false});
-                        noindicator = false;
-                        state = false;
-                        nomouse = false;
-                        enabled = true;
-                        binding = false;
-                        risky = false;
-                        objects = {};
-                    };
-
-                    local blacklist = {'objects'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) and bind[i] ~= nil then
-                            bind[i] = v
-                        end
-                    end
-                    
-                    table.insert(self.options, bind)
-
-                    if bind.flag then
-                        library.options[bind.flag] = bind;
-                    end
-
-                    --- Create Objects ---
-                    do
-                        local objs = bind.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,19);
-                            Transparency = 0;
-                            ZIndex = z+5;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(0,2,0,2);
-                            ThemeColor = bind.risky and 'Risky Text' or 'Option Text 2';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Outline = true;
-                            Parent = objs.holder;
-                        })
-
-                        objs.keyText = utility:Draw('Text', {
-                            ThemeColor = 'Option Text 3';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Parent = objs.holder;
-                        })
-
-                        utility:Connection(objs.holder.MouseEnter, function()
-                            objs.keyText.ThemeColor = 'Accent';
-                        end)
-
-                        utility:Connection(objs.holder.MouseLeave, function()
-                            objs.keyText.ThemeColor = bind.binding and 'Accent' or 'Option Text 3';
-                        end)
-
-                        utility:Connection(objs.holder.MouseButton1Down, function()
-                            if not bind.binding then
-                                bind:SetKeyText('...');
-                                bind.binding = true;
-                            end
-                        end)
-
-                    end
-                    ----------------------
-
-                    local c
-
-                    function bind:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                            self.indicatorValue:SetKey(str);
-                        end
-                    end
-
-                    function bind:SetBind(keybind)
-                        if c then
-                            c:Disconnect();
-                            if bind.flag then
-                                library.flags[bind.flag] = false;
-                            end
-                            bind.callback(false);
-                        end
-                        local keyName = 'NONE'
-                        self.bind = (keybind and keybind) or keybind or self.bind
-                        if self.bind == Enum.KeyCode.Backspace then
-                            self.bind = 'none';
-                        else
-                            keyName = keyNames[keybind] or keybind.Name or keybind
-                        end
-                        self.keycallback(self.bind);
-                        self:SetKeyText(keyName:upper());
-                        self.indicatorValue:SetKey((self.text == nil or self.text == '') and (self.flag == nil and 'unknown' or self.flag) or self.text); -- this is so dumb
-                        self.indicatorValue:SetValue('['..keyName:upper()..']');
-                        self.objects.keyText.ThemeColor = self.objects.holder.Hover and 'Accent' or 'Option Text 3';
-                    end
-
-                    function bind:SetKeyText(str)
-                        str = tostring(str);
-                        self.objects.keyText.Text = '['..str..']';
-                        self.objects.keyText.Position = newUDim2(1,-self.objects.keyText.TextBounds.X, 0, 2);
-                    end
-
-                    utility:Connection(inputservice.InputBegan, function(inp)
-                        if inputservice:GetFocusedTextBox() then
-                            return
-                        elseif bind.binding then
-                            local key = (table.find({Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.MouseButton3}, inp.UserInputType) and not bind.nomouse) and inp.UserInputType
-                            bind:SetBind(key or (not table.find(blacklistedKeys, inp.KeyCode)) and inp.KeyCode)
-                            bind.binding = false
-                        elseif not bind.binding and self.bind == 'none' then
-                            bind.state = true
-                            library.flags[bind.flag] = bind.state
-                        elseif (inp.KeyCode == bind.bind or inp.UserInputType == bind.bind) and not bind.binding then
-                            if bind.mode == 'toggle' then
-                                bind.state = not bind.state
-                                if bind.flag then
-                                    library.flags[bind.flag] = bind.state;
-                                end
-                                bind.callback(bind.state)
-                                bind.indicatorValue:SetEnabled(bind.state and not bind.noindicator);
-                            elseif bind.mode == 'hold' then
-                                if bind.flag then
-                                    library.flags[bind.flag] = true;
-                                end
-                                bind.indicatorValue:SetEnabled(true and not bind.noindicator);
-                                c = utility:Connection(runservice.RenderStepped, function()
-                                    bind.callback(true);
-                                end)
-                            end
-                        end
-                    end)
-
-                    utility:Connection(inputservice.InputEnded, function(inp)
-                        if bind.bind ~= 'none' then
-                            if inp.KeyCode == bind.bind or inp.UserInputType == bind.key then
-                                if c then
-                                    c:Disconnect();
-                                    if bind.flag then
-                                        library.flags[bind.flag] = false;
-                                    end
-                                    bind.callback(false);
-                                    bind.indicatorValue:SetEnabled(false);
-                                end
-                            end
-                        end
-                    end)
-
-                    tooltip(bind);
-                    bind:SetBind(bind.bind);
-                    bind:SetText(bind.text);
-                    self:UpdateOptions();
-                    return bind
-                end
-
-                -- // Dropdown
-                function section:AddList(data)
-                    local list = {
-                        class = 'list';
-                        flag = data.flag;
-                        text = '';
-                        selected = '';
-                        tooltip = '';
-                        order = #self.options+1;
-                        callback = function() end;
-                        enabled = true;
-                        multi = false;
-                        open = false;
-                        risky = false;
-                        values = {};
-                        objects = {};
-                    }
-
-                    table.insert(self.options, list);
-
-                    local blacklist = {'objects'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) ~= list[i] ~= nil then
-                            list[i] = v
-                        end
-                    end
-
-                    if list.flag then
-                        library.flags[list.flag] = list.selected;
-                        library.options[list.flag] = list;
-                    end
-
-                    -- Create Objects --
-                    do
-                        local objs = list.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Size = newUDim2(1,0,0,40);
-                            Transparency = 0;
-                            ZIndex = z+4;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.background = utility:Draw('Square', {
-                            Size = newUDim2(1,-4,0,15);
-                            Position = newUDim2(0,2,1,-19);
-                            ThemeColor = 'Option Background';
-                            ZIndex = z+2;
-                            Parent = objs.holder;
-                        })
-
-                        objs.border1 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 1';
-                            ZIndex = z+1;
-                            Parent = objs.background;
-                        })
-
-                        objs.border2 = utility:Draw('Square', {
-                            Size = newUDim2(1,2,1,2);
-                            Position = newUDim2(0,-1,0,-1);
-                            ThemeColor = 'Option Border 2';
-                            ZIndex = z;
-                            Parent = objs.border1;
-                        })
-
-                        objs.gradient = utility:Draw('Image', {
-                            Size = newUDim2(1,0,1,0);
-                            Data = library.images.gradientp90;
-                            Transparency = .65;
-                            ZIndex = z+4;
-                            Parent = objs.background;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(0,2,0,2);
-                            ThemeColor = list.risky and 'Risky Text Enabled' or 'Option Text 2';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Outline = true;
-                            Parent = objs.holder;
-                        })
-
-                        objs.inputText = utility:Draw('Text', {
-                            Position = newUDim2(0,4,0,0);
-                            ThemeColor = 'Option Text 2';
-                            Text = 'none',
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+5;
-                            Outline = true;
-                            Parent = objs.background;
-                        })
-
-                        objs.openText = utility:Draw('Text', {
-                            Position = newUDim2(1,-10,0,0);
-                            ThemeColor = 'Option Text 3';
-                            Text = '+';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+5;
-                            Outline = true;
-                            Parent = objs.background;
-                        })
-
-                        utility:Connection(objs.holder.MouseEnter, function()
-                            objs.border1.ThemeColor = 'Accent';
-                        end)
-
-                        utility:Connection(objs.holder.MouseLeave, function()
-                            objs.border1.ThemeColor = 'Option Border 1';
-                        end)
-
-                        utility:Connection(objs.holder.MouseButton1Down, function()
-                            if list.open then
-                                list.open = false;
-                                objs.openText.Text = '+';
-                                if window.dropdown.selected == list then
-                                    window.dropdown.selected = nil;
-                                    window.dropdown.objects.background.Visible = false;
-                                end
-                            else
-                                if window.dropdown.selected ~= nil then
-                                    window.dropdown.selected.open = false
-                                end
-                                list.open = true;
-                                objs.openText.Text = '-';
-                                window.dropdown.selected = list;
-                                window.dropdown.objects.background.Visible = true;
-                                window.dropdown.objects.background.Parent = objs.holder;
-                                window.dropdown:Refresh();
-                            end
-                        end)
-
-
-                    end
-                    --------------------
-
-                    function list:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                        end
-                    end
-
-                    function list:Select(option, nocallback)
-                        option = typeof(option) == 'table' and (self.multi == true and option or (#option == 0 and nil or option[1])) or self.multi == true and {option} or option;
-                        if option ~= nil then
-                            self.selected = option;
-                            local text = typeof(option) == 'table' and (#option == 0 and "none" or table.concat(option, ', ')) or tostring(option);
-                            local label = self.objects.inputText
-                            label.Text = text;
-                            if label.TextBounds.X > self.objects.background.Object.Size.X - 10 then
-                                local split = text:split('');
-                                for i = 1,#split do
-                                    label.Text = table.concat(split, '', 1, i)
-                                    if label.TextBounds.X > self.objects.background.Object.Size.X - 10 then
-                                        label.Text = label.Text:sub(1,-6)..'...';
-                                        break
-                                    end
-                                end
-                            end
-                            if self.flag then
-                                library.flags[self.flag] = self.selected
-                            end
-                            if not nocallback then
-                                self.callback(self.selected);
-                            end
-                        end
-                    end
-
-                    function list:AddValue(value)
-                        table.insert(list.values, tostring(value));
-                        if window.dropdown.selected == list then
-                            window.dropdown:Refresh()
-                        end
-                    end
-
-                    function list:RemoveValue(value)
-                        if table.find(list.values, value) then
-                            table.remove(list.values, table.find(list.values, value));
-                            if window.dropdown.selected == list then
-                                window.dropdown:Refresh()
-                            end
-                        end
-                    end
-
-                    function list:ClearValues()
-                        table.clear(list.values);
-                        if window.dropdown.selected == list then
-                            window.dropdown:Refresh()
-                        end
-                    end
-
-                    tooltip(list);
-                    list:Select((data.value or data.selected) or (list.multi and 'none' or list.values[1]), true);
-                    list:SetText(list.text);
-                    self:UpdateOptions();
-                    return list
-                end
-
-                -- Text
-                function section:AddText(data)
-                    local text = {
-                        class = 'text';
-                        flag = data.flag;
-                        text = '';
-                        tooltip = '';
-                        order = #self.options+1;
-                        enabled = true;
-                        risky = false;
-                        objects = {};
-                    };
-
-                    local blacklist = {'objects'};
-                    for i,v in pairs(data) do
-                        if not table.find(blacklist, i) and text[i] ~= nil then
-                            text[i] = v
-                        end
-                    end
-
-                    if data.flag then
-                        library.options[data.flag] = text;
-                    end
-
-                    table.insert(self.options, text)
-
-                    --- Create Objects ---
-                    do
-                        local objs = text.objects;
-                        local z = library.zindexOrder.window+25;
-
-                        objs.holder = utility:Draw('Square', {
-                            Transparency = 0;
-                            ZIndex = z+5;
-                            Parent = section.objects.optionholder;
-                        })
-
-                        objs.text = utility:Draw('Text', {
-                            Position = newUDim2(0,2,0,2);
-                            ThemeColor = text.risky and 'Risky Text Enabled' or 'Option Text 2';
-                            Size = 13;
-                            Font = 2;
-                            ZIndex = z+1;
-                            Outline = true;
-                            Parent = objs.holder;
-                        })
-                    end
-                    ----------------------
-
-                    function text:SetText(str)
-                        if typeof(str) == 'string' then
-                            self.text = str;
-                            self.objects.text.Text = str;
-                            self.objects.holder.Size = newUDim2(1,0,0,self.objects.text.TextBounds.Y + 6);
-                            section:UpdateOptions();
-                        end
-                    end
-
-                    text:SetText(text.text);
-                    self:UpdateOptions();
-                    return text
-                end
-
-                -----------------------
-
-                section:UpdateOptions();
-                section:SetText(section.text);
-                self:UpdateSections();
-                return section;
-            end
-
-            function tab:UpdateSections()
-                table.sort(self.sections, function(a,b)
-                    return a.order < b.order
-                end)
-
-                local last1,last2;
-                local padding = 15;
-                for _,section in pairs(self.sections) do
-
-                    if section.objects.background.Visible ~= (section.enabled and tab.selected) then
-                        section.objects.background.Visible = section.enabled and tab.selected
-                        section:UpdateOptions();
-                    end
-                    
-                    if section.enabled then
-                        if section.side == 1 then
-                            if last1 then
-                                section.objects.background.Position = last1.objects.background.Position + newUDim2(0,0,0,last1.objects.background.Object.Size.Y + padding);
-                            end
-                            last1 = section;
-                        elseif section.side == 2 then
-                            if last2 then
-                                section.objects.background.Position = last2.objects.background.Position + newUDim2(0,0,0,last2.objects.background.Object.Size.Y + padding);
-                            end
-                            last2 = section;
-                        end
-                    end
-
-                    section:SetText(section.text)
-                    
-                end
-            end
-
-            function tab:SetText(str)
-                if typeof(str) == 'string' then
-                    self.text = str;
-                    self.objects.text.Text = str;
-                    window:UpdateTabs();
-                end
-            end
-
-            function tab:Select()
-                window.selectedTab = tab;
-                window:UpdateTabs();
-                for i,v in next, window.tabs do
-                    if v.callback then
-                        v.callback(v == tab)
-                    end
-                end
-            end
-
-            if window.selectedTab == nil then
-                tab:Select();
-            end
-
-            tab:SetText(tab.text);
-            window:UpdateTabs();
-            return tab;
-        end
-
-        function window:UpdateTabs()
-            table.sort(self.tabs, function(a,b)
-                return a.order < b.order
-            end)
-            local pos = 0;
-            for i,v in pairs(self.tabs) do
-                local objs = v.objects;
-                v.selected = v == self.selectedTab;
-                objs.background.ThemeColor = v.selected and 'Selected Tab Background' or 'Unselected Tab Background';
-                objs.background.Size = newUDim2(0, objs.text.TextBounds.X + 14, 1, v.selected and 1 or 0);
-                objs.background.Position = newUDim2(0, pos, 0, 0)
-
-                objs.text.ThemeColor = v.selected and 'Selected Tab Text' or 'Unselected Tab Text';
-                objs.text.Position = newUDim2(.5, 0, 0, 3);
-
-                objs.topBorder.ThemeColor = v.selected and 'Accent' or 'Unselected Tab Background';
-
-                pos += objs.background.Size.X.Offset + 1
-
-                v:UpdateSections();
-
-            end
-        end
-
-        window:SetOpen(true);
-        return window;
-    end
-
-    -- Tooltip
-    do
-        local z = library.zindexOrder.window + 2000;
-        tooltipObjects.background = utility:Draw('Square', {
-            ThemeColor = 'Group Background';
-            ZIndex = z;
-            Visible = false;
-        })
-
-        tooltipObjects.border1 = utility:Draw('Square', {
-            Size = UDim2.new(1,2,1,2);
-            Position = UDim2.new(0,-1,0,-1);
-            ThemeColor = 'Border 1';
-            ZIndex = z-1;
-            Parent = tooltipObjects.background;
-        })
-
-        tooltipObjects.border2 = utility:Draw('Square', {
-            Size = UDim2.new(1,4,1,4);
-            Position = UDim2.new(0,-2,0,-2);
-            ThemeColor = 'Border 3';
-            ZIndex = z-2;
-            Parent = tooltipObjects.background;
-        })
-
-        tooltipObjects.text = utility:Draw('Text', {
-            Position = UDim2.new(0,3,0,0);
-            ThemeColor = 'Primary Text';
-            Size = 13;
-            Font = 2;
-            ZIndex = z+1;
-            Outline = true;
-            Parent = tooltipObjects.background;
-        })
-
-        tooltipObjects.riskytext = utility:Draw('Text', {
-            Position = UDim2.new(0,3,0,0);
-            ThemeColor = 'Risky Text Enabled';
-            Text = '[RISKY]';
-            Size = 13;
-            Font = 2;
-            ZIndex = z+1;
-            Outline = true;
-            Parent = tooltipObjects.background;
-        })
-
-    end
-    
-    -- Watermark
-    do
-        if not IonHub_User then
-            getgenv().IonHub_User = {
-                UID = 0, 
-                User = "admin"
-            }
-        end
-        self.watermark = {
-            objects = {};
-            text = {
-                {self.cheatname, true},
-                {"Private", true},
-                {self.gamename, true},
-                {'0 fps', true},
-                {'0ms', true},
-                {'00:00:00', true},
-                {'M, D, Y', true},
-            };
-            lock = 'custom';
-            position = newUDim2(0,0,0,0);
-            refreshrate = 25;
-        }
-
-        function self.watermark:Update()
-            self.objects.background.Visible = library.flags.watermark_enabled
-            if library.flags.watermark_enabled then
-                local date = {os.date('%b',os.time()), os.date('%d',os.time()), os.date('%Y',os.time())}
-                local daySuffix = math.floor(date[2]%10)
-                date[2] = date[2]..(daySuffix == 1 and 'st' or daySuffix == 2 and 'nd' or daySuffix == 3 and 'rd' or 'th')
-
-                self.text[4][1] = library.stats.fps..' fps'
-                self.text[5][1] = tostring(floor(library.stats.ping))..'ms'
-                self.text[6][1] = os.date('%X', os.time())
-                self.text[7][1] = table.concat(date, ', ')
-
-                local text = {};
-                for _,v in next, self.text do
-                    if v[2] then
-                        table.insert(text, v[1]);
-                    end
-                end
-
-                self.objects.text.Text = table.concat(text,' | ')
-                self.objects.background.Size = newUDim2(0, self.objects.text.TextBounds.X + 10, 0, 17)
-
-                local size = self.objects.background.Object.Size;
-                local screensize = workspace.CurrentCamera.ViewportSize;
-
-                self.position = (
-                    self.lock == 'Top Right' and newUDim2(0, screensize.X - size.X - 15, 0, 15) or
-                    self.lock == 'Top Left' and newUDim2(0, 15, 0, 15) or
-                    self.lock == 'Bottom Right' and newUDim2(0, screensize.X - size.X - 15, 0, screensize.Y - size.Y - 15) or
-                    self.lock == 'Bottom Left' and newUDim2(0, 15, 0, screensize.Y - size.Y - 15) or
-                    self.lock == 'Top' and newUDim2(0, screensize.X / 2 - size.X / 2, 0, 15) or
-                    newUDim2(library.flags.watermark_x / 100, 0, library.flags.watermark_y / 100, 0)
-                )
-
-                self.objects.background.Position = self.position
-            end
-        end
-
-        do
-            local objs = self.watermark.objects;
-            local z = self.zindexOrder.watermark;
-            
-            objs.background = utility:Draw('Square', {
-                Visible = false;
-                Size = newUDim2(0, 200, 0, 17);
-                Position = newUDim2(0,800,0,100);
-                ThemeColor = 'Background';
-                ZIndex = z;
-            })
-
-            objs.border1 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 2';
-                Parent = objs.background;
-                ZIndex = z-1;
-            })
-
-            objs.border2 = utility:Draw('Square', {
-                Size = newUDim2(1,2,1,2);
-                Position = newUDim2(0,-1,0,-1);
-                ThemeColor = 'Border 3';
-                Parent = objs.border1;
-                ZIndex = z-2;
-            })
-            
-            objs.topbar = utility:Draw('Square', {
-                Size = newUDim2(1,0,0,1);
-                ThemeColor = 'Accent';
-                ZIndex = z+1;
-                Parent = objs.background;
-            })
-
-            objs.text = utility:Draw('Text', {
-                Position = newUDim2(.5,0,0,2);
-                ThemeColor = 'Primary Text';
-                Text = 'Watermark Text';
-                Size = 13;
-                Font = 2;
-                ZIndex = z+1;
-                Outline = true;
-                Center = true;
-                Parent = objs.background;
-            })
-
-        end
-    end
-
-    local lasttick = tick();
-    utility:Connection(runservice.RenderStepped, function(step)
-        library.stats.fps = floor(1/step)
-        library.stats.ping = stats.Network.ServerStatsItem["Data Ping"]:GetValue()
-        library.stats.sendkbps = stats.DataSendKbps
-        library.stats.receivekbps = stats.DataReceiveKbps
-
-        if (tick()-lasttick)*1000 > library.watermark.refreshrate then
-            lasttick = tick()
-            library.watermark:Update()
-        end
-    end)
-
-    self.keyIndicator = self.NewIndicator({title = 'Keybinds', pos = newUDim2(0,15,0,325), enabled = true});
-    
-    self.targetIndicator = self.NewIndicator({title = 'Target Info', pos = newUDim2(0,15,0,350), enabled = false});
-    self.targetName = self.targetIndicator:AddValue({key = 'Name     :', value = 'nil'})
-    self.targetDisplay = self.targetIndicator:AddValue({key = 'DName    :', value = 'nil'})
-    self.targetHealth = self.targetIndicator:AddValue({key = 'Health   :', value = '0'})
-    self.targetDistance = self.targetIndicator:AddValue({key = 'Distance :', value = '0m'})
-    self.targetTool = self.targetIndicator:AddValue({key = 'Weapon   :', value = 'nil'})
-
-    self:SetTheme(library.theme);
-    self:SetOpen(true);
-    self.hasInit = true
-
+--
+utility.splitenum = function(enum)
+	local s = tostring(enum):split(".")
+	return s[#s]
 end
-
-function library:CreateSettingsTab(menu)
-    local settingsTab = menu:AddTab('  Settings  ', 999);
-    local configSection = settingsTab:AddSection('Config', 1);
-    local mainSection = settingsTab:AddSection('Main', 1);
-
-    configSection:AddBox({text = 'Config Name', flag = 'configinput'})
-    configSection:AddList({text = 'Config', flag = 'selectedconfig'})
-
-    local function refreshConfigs()
-        library.options.selectedconfig:ClearValues();
-        for _,v in pairs(listfiles(self.cheatname..'/'..self.gamename..'/configs')) do
-            local ext = '.'..v:split('.')[#v:split('.')];
-            if ext == self.fileext then
-                library.options.selectedconfig:AddValue(v:split('\\')[#v:split('\\')]:sub(1,-#ext-1))
-            end
-        end
-    end
-
-    configSection:AddButton({text = 'Load', confirm = true, callback = function()
-        library:LoadConfig(library.flags.selectedconfig);
-    end}):AddButton({text = 'Save', confirm = true, callback = function()
-        library:SaveConfig(library.flags.selectedconfig);
-    end})
-
-    configSection:AddButton({text = 'Create', confirm = true, callback = function()
-        if library:GetConfig(library.flags.configinput) then
-            library:SendNotification('Config \''..library.flags.configinput..'\' already exists.', 5, c3new(1,0,0));
-            return
-        end
-        writefile(self.cheatname..'/'..self.gamename..'/configs/'..library.flags.configinput.. self.fileext, http:JSONEncode({}));
-        refreshConfigs()
-    end}):AddButton({text = 'Delete', confirm = true, callback = function()
-        if library:GetConfig(library.flags.selectedconfig) then
-            delfile(self.cheatname..'/'..self.gamename..'/configs/'..library.flags.selectedconfig.. self.fileext);
-            refreshConfigs()
-        end
-    end})
-
-    refreshConfigs()
-
-    mainSection:AddBind({text = 'Open / Close', flag = 'togglebind', nomouse = true, noindicator = true, bind = Enum.KeyCode.End, callback = function()
-        -- The original callback was empty, assuming you want to toggle the menu.
-        library:SetOpen(not library.open);
-    end});
-
-    mainSection:AddButton({text = 'Copy Discord Invite', flag = 'joindiscord', callback = function()
-        setclipboard("https://discord.gg/rkRW5VrbWu")
-        library:SendNotification('Discord invite copied to clipboard!', 3);
-    end})
-
-    mainSection:AddButton({text = 'Rejoin Server', confirm = true, callback = function()
-        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId);
-    end})
-
-    mainSection:AddButton({text = 'Rejoin Game', confirm = true, callback = function()
-        game:GetService("TeleportService"):Teleport(game.PlaceId);
-    end})
-
-    mainSection:AddButton({text = 'Copy Join Script', callback = function()
-        setclipboard(([[game:GetService("TeleportService"):TeleportToPlaceInstance(%s, "%s")]]):format(game.PlaceId, game.JobId))
-    end})
-
-    mainSection:AddButton({text = "Unload", confirm = true,
-       callback = function(bool)
-           if bool then
-               library:Unload() 
-           else
-               library:Unload() 
-           end
-       end})
-
-    mainSection:AddSeparator({text = 'Indicators'});
-
-    mainSection:AddToggle({text = 'Watermark', flag = 'watermark_enabled', state = true,});
-
-    mainSection:AddSlider({text = 'Custom X', flag = 'watermark_x', suffix = '%', min = 0, max = 100, increment = .1, value = 6});
-    mainSection:AddSlider({text = 'Custom Y', flag = 'watermark_y', suffix = '%', min = 0, max = 100, increment = .1, value = 1});
-
-    mainSection:AddToggle({text = 'Keybinds', flag = 'keybind_indicator', state = true, callback = function(bool)
-        library.keyIndicator:SetEnabled(bool);
-    end})
-    mainSection:AddSlider({text = 'Position X', flag = 'keybind_indicator_x', min = 0, max = 100, increment = .1, value = .5, callback = function()
-        library.keyIndicator:SetPosition(newUDim2(library.flags.keybind_indicator_x / 100, 0, library.flags.keybind_indicator_y / 100, 0));    
-    end});
-    mainSection:AddSlider({text = 'Position Y', flag = 'keybind_indicator_y', min = 0, max = 100, increment = .1, value = 30, callback = function()
-        library.keyIndicator:SetPosition(newUDim2(library.flags.keybind_indicator_x / 100, 0, library.flags.keybind_indicator_y / 100, 0));    
-    end});
-
-
-
-    local themeStrings = {"Custom"};
-    for _,v in pairs(library.themes) do
-        table.insert(themeStrings, v.name)
-    end
-    local themeSection = settingsTab:AddSection('Custom Theme', 2);
-    local setByPreset = false
-themeSection:AddList({text = 'Presets', flag = 'preset_theme', values = themeStrings, callback = function(newTheme)
-        if newTheme == "Custom" then return end
-        setByPreset = true
-        for _,v in pairs(library.themes) do
-            if v.name == newTheme then
-                for x, d in pairs(library.options) do
-                    if v.theme[tostring(x)] ~= nil then
-                        d:SetColor(v.theme[tostring(x)])
-                    end
-                end
-                library:SetTheme(v.theme)
-                break
-            end
-        end
-        setByPreset = false
-    end}):Select('Default');
-
-    for i, v in pairs(library.theme) do
-        themeSection:AddColor({text = i, flag = i, color = library.theme[i], callback = function(c3)
-            library.theme[i] = c3
-            library:SetTheme(library.theme)
-            if not setByPreset and not setByConfig then 
-                library.options.preset_theme:Select('Custom')
-            end
-        end});
-    end
-
-    return settingsTab;
+--
+utility.from_hex = function(h)
+	local r,g,b = string.match(h,"^#?(%w%w)(%w%w)(%w%w)$")
+	return Color3.fromRGB(tonumber(r,16), tonumber(g,16), tonumber(b,16))
 end
-
-getgenv().library = library
+--
+utility.to_hex = function(c)
+	return string.format("#%02X%02X%02X",c.R *255,c.G *255,c.B *255)
+end
+--
+utility.removespaces = function(s)
+   return s:gsub(" ","")
+end
+-- // main
+function library:new(props)
+	-- // properties
+	local textsize = props.textsize or props.TextSize or props.textSize or props.Textsize or 12
+	local font = props.font or props.Font or "RobotoMono"
+	local name = props.name or props.Name or props.UiName or props.Uiname or props.uiName or props.username or props.Username or props.UserName or props.userName or "new ui"
+	local color = props.color or props.Color or props.mainColor or props.maincolor or props.MainColor or props.Maincolor or props.Accent or props.accent or Color3.fromRGB(225, 58, 81)
+	-- // variables
+	local window = {}
+	-- // main
+	local screen = utility.new(
+		"ScreenGui",
+		{
+			Name = tostring(math.random(0,999999))..tostring(math.random(0,999999)),
+			DisplayOrder = 9999,
+			ResetOnSpawn = false,
+			ZIndexBehavior = "Global",
+			Parent = cre
+		}
+	)
+	--
+        if (check_exploit == "Synapse" and syn.request) then
+	syn.protect_gui(screen)
+        end
+	-- 1
+	local outline = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = color,
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,500,0,606),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Parent = screen
+		}
+	)
+	-- 2
+	local outline2 = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-4,1,-4),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Parent = outline
+		}
+	)
+	-- 3
+	local indent = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Parent = outline2
+		}
+	)
+	-- 4
+	local main = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,1),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-10,1,-25),
+			Position = UDim2.new(0.5,0,1,-5),
+			Parent = outline2
+		}
+	)
+	--
+	local title = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0.5,0,0,0),
+			Parent = outline2
+		}
+	)
+	-- 5
+	local outline3 = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Parent = main
+		}
+	)
+	--
+	local titletext = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,1,0),
+			Position = UDim2.new(0.5,0,0,0),
+			Font = font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextXAlignment = "Left",
+			TextSize = textsize,
+			TextStrokeTransparency = 0,
+			Parent = title
+		}
+	)
+	-- 6
+	local holder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-6,1,-6),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Parent = main
+		}
+	)
+	-- 7
+	local holder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-6,1,-6),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Parent = main
+		}
+	)
+	-- 8
+	local tabs = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,1),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,-20),
+			Position = UDim2.new(0.5,0,1,0),
+			Parent = holder
+		}
+	)
+	--
+	local tabsbuttons = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,21),
+			Position = UDim2.new(0.5,0,0,0),
+			ZIndex = 2,
+			Parent = holder
+		}
+	)
+	-- 9
+	local outline4 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = tabs
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Horizontal",
+			Padding = UDim.new(0,2),
+			Parent = tabsbuttons
+		}
+	)
+	--
+	utility.dragify(title,outline)
+	-- // window tbl
+	window = {
+		["screen"] = screen,
+		["holder"] = holder,
+		["labels"] = {},
+		["tabs"] = outline4,
+		["tabsbuttons"] = tabsbuttons,
+		["outline"] = outline,
+		["pages"] = {},
+		["pointers"] = {},
+		["dropdowns"] = {},
+		["multiboxes"] = {},
+		["buttonboxs"] = {},
+		["colorpickers"] = {},
+		["x"] = true,
+		["y"] = true,
+		["key"] = Enum.KeyCode.RightShift,
+		["textsize"] = textsize,
+		["font"] = font,
+		["theme"] = {
+			["accent"] = color
+		},
+		["themeitems"] = {
+			["accent"] = {
+				["BackgroundColor3"] = {},
+				["BorderColor3"] = {},
+				["TextColor3"] = {}
+			}
+		}
+	}
+	--
+	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
+	--
+	local toggled = true
+	local cooldown = false
+	local saved = UDim2.new(0,0,0,0)
+	--
+	uis.InputBegan:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.Keyboard then
+			if Input.KeyCode == window.key then
+				if cooldown == false then
+					if toggled then
+						cooldown = true
+						toggled = not toggled
+						saved = outline.Position
+						local xx,yy = 0,0
+						local xxx,yyy = 0,0
+						--
+						if (outline.AbsolutePosition.X+(outline.AbsoluteSize.X/2)) < (cam.ViewportSize.X/2) then
+							xx = -3
+						else
+							xx = 3
+						end
+						--
+						if window.y then
+							if (outline.AbsolutePosition.Y+(outline.AbsoluteSize.Y/2)) < (cam.ViewportSize.Y/2) then
+								yy = -3
+							else
+								yy = 3
+							end
+						else
+							yy = saved.Y.Scale
+							yyy = saved.Y.Offset
+						end
+						--
+						if window.x == false and window.y == false then
+							screen.Enabled = false
+						else
+							ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(xx,xxx,yy,yyy)}):Play()
+						end
+						wait(0.5)
+						cooldown = false
+					else
+						cooldown = true
+						toggled = not toggled
+						if window.x == false and window.y == false then
+							screen.Enabled = true
+						else
+							ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Position = saved}):Play()
+						end
+						wait(0.5)
+						cooldown = false
+					end
+				end
+			end
+		end
+	end)
+	--
+	window.labels[#window.labels+1] = titletext
+	-- // metatable indexing + return
+	setmetatable(window, library)
+	return window
+end
+--
+function library:watermark()
+	local watermark = {}
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundColor3 = self.theme.accent,
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,300,0,26),
+			Position = UDim2.new(1,-10,0,10),
+			ZIndex = 9900,
+			Visible = false,
+			Parent = self.screen
+		}
+	)
+	--
+	table.insert(self.themeitems["accent"]["BackgroundColor3"],outline)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-4,1,-4),
+			Position = UDim2.new(0.5,0,0.5,0),
+			ZIndex = 9901,
+			Parent = outline
+		}
+	)
+	--
+	local indent = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			ZIndex = 9902,
+			Parent = outline2
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,1,0),
+			Position = UDim2.new(0.5,0,0,0),
+			Font = self.font,
+			Text = "",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextXAlignment = "Left",
+			TextSize = self.textsize,
+			TextStrokeTransparency = 0,
+			ZIndex = 9903,
+			Parent = indent
+		}
+	)
+	--
+	local con
+	con = title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+		outline.Size = UDim2.new(0,title.TextBounds.X+20,0,26)
+	end)
+	--
+	watermark = {
+		["outline"] = outline,
+		["outline2"] = outline2,
+		["indent"] = indent,
+		["title"] = title,
+		["connection"] = con
+	}
+	--
+	self.labels[#self.labels+1] = title
+	--
+	setmetatable(watermark,watermarks)
+	return watermark
+end
+--
+function watermarks:update(content)
+	local content = content or {}
+	local watermark = self
+	--
+	local text = ""
+	--
+	for i,v in pairs(content) do
+		text = text..i..": "..v.."  "
+	end
+	--
+	text = text:sub(0, -3)
+	--
+	watermark.title.Text = text
+end
+--
+function watermarks:updateside(side)
+	side = utility.removespaces(tostring(side):lower())
+	--
+	local sides = {
+		topright = {
+			AnchorPoint = Vector2.new(1,0),
+			Position = UDim2.new(1,-10,0,10)
+		},
+		topleft = {
+			AnchorPoint = Vector2.new(0,0),
+			Position = UDim2.new(0,10,0,10)
+		},
+		bottomright = {
+			AnchorPoint = Vector2.new(1,1),
+			Position = UDim2.new(1,-10,1,-10)
+		},
+		bottomleft = {
+			AnchorPoint = Vector2.new(0,1),
+			Position = UDim2.new(0,10,1,-10)
+		}
+	}
+	--
+	if sides[side] then
+		self.outline.AnchorPoint = sides[side].AnchorPoint
+		self.outline.Position = sides[side].Position
+	end
+end
+--
+function library:loader(props)
+	local name = props.name or props.Name or props.LoaderName or props.Loadername or props.loaderName or props.loadername or "Loader"
+	local scriptname = props.scriptname or props.Scriptname or props.ScriptName or props.scriptName or "Universal"
+	local closed = props.close or props.Close or props.closecallback or props.Closecallback or props.CloseCallback or props.closeCallback or function()end
+	local logedin = props.login or props.Login or props.logincallback or props.Logincallback or props.LoginCallback or props.loginCallback or function()end
+	local loader = {}
+	--
+	local screen = utility.new(
+		"ScreenGui",
+		{
+			Name = tostring(math.random(0,999999))..tostring(math.random(0,999999)),
+			DisplayOrder = 9999,
+			ResetOnSpawn = false,
+			ZIndexBehavior = "Global",
+			Parent = cre
+		}
+	)
+        if (check_exploit == "Synapse" and syn.request) then
+	syn.protect_gui(screen)
+        end
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(168, 52, 235),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,300,0,90),
+			Position = UDim2.new(0.5,0,0.5,0),
+			ZIndex = 9900,
+			Visible = false,
+			Parent = screen
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-4,1,-4),
+			Position = UDim2.new(0.5,0,0.5,0),
+			ZIndex = 9901,
+			Parent = outline
+		}
+	)
+	--
+	local indent = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			ZIndex = 9902,
+			Parent = outline2
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,0,20),
+			Position = UDim2.new(0.5,0,0,0),
+			Font = "RobotoMono",
+			Text = name,
+			TextColor3 = Color3.fromRGB(168, 52, 235),
+			TextXAlignment = "Center",
+			TextSize = 12,
+			TextStrokeTransparency = 0,
+			ZIndex = 9903,
+			Parent = indent
+		}
+	)
+	--
+	local scripttitle = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,0,20),
+			Position = UDim2.new(0.5,0,0,20),
+			Font = "RobotoMono",
+			Text = "Script: "..scriptname,
+			TextColor3 = Color3.fromRGB(255, 255, 255),
+			TextXAlignment = "Center",
+			TextSize = 12,
+			TextStrokeTransparency = 0,
+			ZIndex = 9903,
+			Parent = indent
+		}
+	)
+	--
+	local makebutton = function(name,parent)
+		local button_holder = utility.new(
+			"Frame",
+			{
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ZIndex = 9904,
+				Parent = parent
+			}
+		)
+		--
+		local button_outline = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(12, 12, 12),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 9905,
+				Parent = button_holder
+			}
+		)
+		--
+		local button_outline2 = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(56, 56, 56),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 9906,
+				Parent = button_outline
+			}
+		)
+		--
+		local button_color = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+				BorderSizePixel = 0,
+				Size = UDim2.new(1,0,0,0),
+				Position = UDim2.new(0,0,0,0),
+				ZIndex = 9907,
+				Parent = button_outline2
+			}
+		)
+		--
+		utility.new(
+			"UIGradient",
+			{
+				Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+				Rotation = 90,
+				Parent = button_color
+			}
+		)
+		--
+		local button_button = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,1,0),
+				Position = UDim2.new(0,0,0,0),
+				Text = name,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = 12,
+				TextStrokeTransparency = 0,
+				Font = "RobotoMono",
+				ZIndex = 9908,
+				Parent = button_holder
+			}
+		)
+		--
+		return {button_holder,button_outline,button_button}
+	end
+	--
+	local close = makebutton("close",indent)
+	local login = makebutton("login",indent)
+	--
+	close[1].AnchorPoint = Vector2.new(0.5,0)
+	close[1].Size = UDim2.new(0.5,0,0,20)
+	close[1].Position = UDim2.new(0.5,0,0,40)
+	--
+	login[1].AnchorPoint = Vector2.new(0.5,0)
+	login[1].Size = UDim2.new(0.5,0,0,20)
+	login[1].Position = UDim2.new(0.5,0,0,62)
+	--
+	close[3].MouseButton1Down:Connect(function()
+		close[2].BorderColor3 = Color3.fromRGB(168, 52, 235)
+		outline:TweenPosition(UDim2.new(-1.5,0,0.5,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.75,true)
+		closed()
+		wait(0.05)
+		close[2].BorderColor3 = Color3.fromRGB(12,12,12)
+		wait(0.7)
+		screen:Remove()
+	end)
+	--
+	login[3].MouseButton1Down:Connect(function()
+		login[2].BorderColor3 = Color3.fromRGB(168, 52, 235)
+		outline:TweenPosition(UDim2.new(1.5,0,0.5,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.75,true)
+		logedin()
+		wait(0.05)
+		login[2].BorderColor3 = Color3.fromRGB(12,12,12)
+		wait(0.7)
+		screen:Remove()
+	end)
+	--
+	loader = {
+		["outline"] = outline,
+		["outline2"] = outline2,
+		["indent"] = indent,
+		["title"] = title
+	}
+	--
+	setmetatable(loader,loaders)
+	return loader
+end
+--
+function loaders:toggle()
+	self.outline.Visible = true
+end
+--
+function watermarks:toggle(bool)
+	local watermark = self
+	--
+	watermark.outline.Visible = bool
+end
+--
+function library:saveconfig()
+	local cfg = {}
+	--
+	for i,v in pairs(self.pointers) do
+		cfg[i] = {}
+		for c,d in pairs(v) do
+			cfg[i][c] = {}
+			for x,z in pairs(d) do
+				if typeof(z.current) == "Color3" then
+					cfg[i][c][x] = {z.current.R,z.current.G,z.current.B}
+				else
+					cfg[i][c][x] = z.current
+				end
+			end
+		end
+	end
+	--
+	return hs:JSONEncode(cfg)
+end
+--
+function library:loadconfig(cfg)
+	local cfg = hs:JSONDecode(readfile(cfg))
+	for i,v in pairs(cfg) do
+		for c,d in pairs(v) do
+			for x,z in pairs(d) do
+				if z ~= nil then
+					if self.pointers[i] ~= nil and self.pointers[i][c] ~= nil and self.pointers[i][c][x] ~= nil then
+						self.pointers[i][c][x]:set(z)
+					end
+				end
+			end
+		end
+	end
+end
+--
+function library:settheme(theme,color)
+	local window = self
+	--
+	if window.theme[theme] then
+		window.theme[theme] = color
+	end
+	--
+	if window.themeitems[theme] then
+		for i,v in pairs(window.themeitems[theme]) do
+			for z,x in pairs(v) do
+				x[i] = color
+			end
+		end
+	end
+end
+--
+function library:setkey(key)
+	if typeof(key) == "EnumItem" then
+		local window = self
+		window.key = key
+	end
+end
+--
+function library:settoggle(side,bool)
+	if side == "x" then
+		self.x = bool
+	else
+		self.y = bool
+	end
+end
+--
+function library:setfont(font)
+	if font ~= nil then
+		local window = self
+		for i,v in pairs(window.labels) do
+			if v ~= nil then
+				v.Font = font
+			end
+		end
+	end
+end
+--
+function library:settextsize(size)
+	if size ~= nil then
+		local window = self
+		for i,v in pairs(window.labels) do
+			if v ~= nil then
+				v.TextSize = size
+			end
+		end
+	end
+end
+--
+function library:page(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	-- // variables
+	local page = {}
+	-- // main
+	local tabbutton = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,75,1,0),
+			Parent = self.tabsbuttons
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = tabbutton
+		}
+	)
+	--
+	local button = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			Parent = tabbutton
+		}
+	)
+	--
+	local r_line = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BorderSizePixel = 0,
+			Size = UDim2.new(0,1,0,1),
+			Position = UDim2.new(1,0,1,1),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
+	--
+	local l_line = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BorderSizePixel = 0,
+			Size = UDim2.new(0,1,0,1),
+			Position = UDim2.new(0,0,1,1),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
+	--
+	local line = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,0,2),
+			Position = UDim2.new(0,0,1,0),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
+	--
+	local label = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.textsize,
+			TextStrokeTransparency = 0,
+			Parent = outline
+		}
+	)
+	--
+	local pageholder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-20,1,-20),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Visible = false,
+			Parent = self.tabs
+		}
+	)
+	--
+	local left = utility.new(
+		"ScrollingFrame",
+		{
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(0.5,-5,1,0),
+			Position = UDim2.new(0,0,0,0),
+			AutomaticCanvasSize = "Y",
+			CanvasSize = UDim2.new(0,0,0,0),
+			ScrollBarImageTransparency = 1,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 0,
+			ClipsDescendants = true,
+			VerticalScrollBarInset = "None",
+			VerticalScrollBarPosition = "Right",
+			Parent = pageholder
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Padding = UDim.new(0,10),
+			Parent = left
+		}
+	)
+	--
+	local right = utility.new(
+		"ScrollingFrame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(0.5,-5,1,0),
+			Position = UDim2.new(1,0,0,0),
+			AutomaticCanvasSize = "Y",
+			CanvasSize = UDim2.new(0,0,0,0),
+			ScrollBarImageTransparency = 1,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 0,
+			ClipsDescendants = true,
+			VerticalScrollBarInset = "None",
+			VerticalScrollBarPosition = "Right",
+			Parent = pageholder
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Padding = UDim.new(0,10),
+			Parent = right
+		}
+	)
+	-- // page tbl
+	page = {
+		["library"] = self,
+		["outline"] = outline,
+		["r_line"] = r_line,
+		["l_line"] = l_line,
+		["line"] = line,
+		["page"] = pageholder,
+		["left"] = left,
+		["right"] = right,
+		["open"] = false,
+		["pointers"] = {}
+	}
+	--
+	table.insert(self.pages,page)
+	--
+	button.MouseButton1Down:Connect(function()
+		if page.open == false then
+			for i,v in pairs(self.pages) do
+				if v ~= page then
+					if v.open then
+						v.page.Visible = false
+						v.open = false
+						v.outline.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+						v.line.Size = UDim2.new(1,0,0,2)
+						v.line.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+					end
+				end
+			end
+			--
+			self:closewindows()
+			--
+			page.page.Visible = true
+			page.open = true
+			page.outline.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			page.line.Size = UDim2.new(1,0,0,3)
+			page.line.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		self.pointers[tostring(pointer)] = page.pointers
+	end
+	--
+	self.labels[#self.labels+1] = label
+	-- // metatable indexing + return
+	setmetatable(page, pages)
+	return page
+end
+--
+function pages:openpage()
+	local page = self
+	--
+	if page.open == false then
+		for i,v in pairs(page.library.pages) do
+			if v ~= page then
+				if v.open then
+					v.page.Visible = false
+					v.open = false
+					v.outline.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+					v.line.Size = UDim2.new(1,0,0,2)
+					v.line.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+				end
+			end
+		end
+		--
+		page.page.Visible = true
+		page.open = true
+		page.outline.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+		page.line.Size = UDim2.new(1,0,0,3)
+		page.line.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	end
+end
+--
+function pages:section(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local side = props.side or props.Side or props.sectionside or props.Sectionside or props.SectionSide or props.sectionSide or "left"
+	local size = props.size or props.Size or props.yaxis or props.yAxis or props.YAxis or props.Yaxis or 200
+	side = side:lower()
+	-- // variables
+	local section = {}
+	-- // main
+	local sectionholder = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,size),
+			Parent = self[side]
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = sectionholder
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = self.library.theme.accent,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,-2,0,1),
+			Position = UDim2.new(0.5,0,0,0),
+			Parent = outline
+		}
+	)
+	--
+	table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
+	--
+	local content = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,1),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,-12,1,-25),
+			Position = UDim2.new(0.5,0,1,-5),
+			Parent = outline
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-5,0,20),
+			Position = UDim2.new(0,5,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = outline
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Padding = UDim.new(0,5),
+			Parent = content
+		}
+	)
+	-- // section tbl
+	section = {
+		["library"] = self.library,
+		["sectionholder"] = sectionholder,
+		["color"] = color,
+		["content"] = content,
+		["pointers"] = {}
+	}
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = section.pointers
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	-- // metatable indexing + return
+	setmetatable(section, sections)
+	return section
+end
+--
+function pages:multisection(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local side = props.side or props.Side or props.sectionside or props.Sectionside or props.SectionSide or props.sectionSide or "left"
+	local size = props.size or props.Size or props.yaxis or props.yAxis or props.YAxis or props.Yaxis or 200
+	side = side:lower()
+	-- // variables
+	local multisection = {}
+	-- // main
+	local sectionholder = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,size),
+			Parent = self[side]
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = sectionholder
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = self.library.theme.accent,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,-2,0,1),
+			Position = UDim2.new(0.5,0,0,0),
+			Parent = outline
+		}
+	)
+	--
+	table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
+	--
+	local tabsholder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0,1),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,-15),
+			Position = UDim2.new(0,0,1,0),
+			Parent = outline
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-5,0,20),
+			Position = UDim2.new(0,5,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = outline
+		}
+	)
+	--
+	local buttons = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,-6,0,20),
+			Position = UDim2.new(0.5,0,0,5),
+			Parent = tabsholder
+		}
+	)
+	--
+	local tabs = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,1),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-6,1,-27),
+			Position = UDim2.new(0.5,0,1,-3),
+			Parent = tabsholder
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Horizontal",
+			Padding = UDim.new(0,2),
+			Parent = buttons
+		}
+	)
+	--
+	local tabs_outline = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = tabs
+		}
+	)
+	-- // section tbl
+	multisection = {
+		["library"] = self.library,
+		["sectionholder"] = sectionholder,
+		["color"] = color,
+		["tabsholder"] = tabsholder,
+		["mssections"] = {},
+		["buttons"] = buttons,
+		["tabs"] = tabs,
+		["tabs_outline"] = tabs_outline,
+		["pointers"] = {}
+	}
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = multisection.pointers
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	-- // metatable indexing + return
+	setmetatable(multisection,multisections)
+	return multisection
+end
+--
+function multisections:section(props)
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	-- // variables
+	local mssection = {}
+	-- // main
+	local tabbutton = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,60,0,20),
+			Parent = self.buttons
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = tabbutton
+		}
+	)
+	--
+	local button = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			Parent = tabbutton
+		}
+	)
+	--
+	local r_line = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BorderSizePixel = 0,
+			Size = UDim2.new(0,1,0,1),
+			Position = UDim2.new(1,0,1,1),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
+	--
+	local l_line = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BorderSizePixel = 0,
+			Size = UDim2.new(0,1,0,1),
+			Position = UDim2.new(0,0,1,1),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
+	--
+	local line = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,0,2),
+			Position = UDim2.new(0,0,1,0),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
+	--
+	local label = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			Parent = outline
+		}
+	)
+	--
+	local content = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,1),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,-6,1,-27),
+			Position = UDim2.new(0.5,0,1,-3),
+			Parent = self.tabs_outline
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Padding = UDim.new(0,5),
+			Parent = content
+		}
+	)
+	-- // mssection tbl
+	mssection = {
+		["library"] = self.library,
+		["outline"] = outline,
+		["r_line"] = r_line,
+		["l_line"] = l_line,
+		["line"] = line,
+		["content"] = content,
+		["open"] = false,
+		["pointers"] = {}
+	}
+	--
+	table.insert(self.mssections,mssection)
+	--
+	button.MouseButton1Down:Connect(function()
+		if mssection.open == false then
+			for i,v in pairs(self.mssections) do
+				if v ~= mssection then
+					if v.open then
+						v.page.Visible = false
+						v.open = false
+						v.outline.BackgroundColor3 = Color3.fromRGB(31, 31 ,31)
+						v.line.Size = UDim2.new(1,0,0,2)
+						v.line.BackgroundColor3 = Color3.fromRGB(31, 31 ,31)
+					end
+				end
+			end
+			--
+			mssection.library:closewindows()
+			--
+			mssection.content.Visible = true
+			mssection.open = true
+			mssection.outline.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+			mssection.line.Size = UDim2.new(1,0,0,3)
+			mssection.line.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = mssection.pointers
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = label
+	-- // metatable indexing + return
+	setmetatable(mssection,mssections)
+	return mssection
+end
+--
+function sections:toggle(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local def = props.def or props.Def or props.default or props.Default or props.toggle or props.Toggle or props.toggled or props.Toggled or false
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	-- // variables
+	local toggle = {}
+	-- // main
+	local toggleholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,15,0,15),
+			Parent = toggleholder
+		}
+	)
+	--
+	local button = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			Parent = toggleholder
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-20,1,0),
+			Position = UDim2.new(0,20,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = toggleholder
+		}
+	)
+	--
+	local col = Color3.fromRGB(20, 20, 20)
+	if def then
+		col = self.library.theme.accent
+	end
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = col,
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline
+		}
+	)
+	if def then
+		table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
+	end
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	-- // toggle tbl
+	toggle = {
+		["library"] = self.library,
+		["toggleholder"] = toggleholder,
+		["title"] = title,
+		["color"] = color,
+		["callback"] = callback,
+		["current"] = def
+	}
+	--
+	button.MouseButton1Down:Connect(function()
+		if toggle.current then
+			toggle.callback(false)
+			toggle.color.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			local find = table.find(self.library.themeitems["accent"]["BackgroundColor3"],toggle.color)
+			if find then
+				table.remove(self.library.themeitems["accent"]["BackgroundColor3"],find)
+			end
+			toggle.current = false
+		else
+			toggle.callback(true)
+			toggle.color.BackgroundColor3 = self.library.theme.accent
+			table.insert(self.library.themeitems["accent"]["BackgroundColor3"],toggle.color)
+			toggle.current = true
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = toggle
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	-- // metatable indexing + return
+	setmetatable(toggle, toggles)
+	return toggle
+end
+--
+function toggles:set(bool)
+	if bool ~= nil then
+		local toggle = self
+		toggle.callback(bool)
+		toggle.current = bool
+		if bool then
+			toggle.color.BackgroundColor3 = self.library.theme.accent
+			table.insert(self.library.themeitems["accent"]["BackgroundColor3"],toggle.color)
+		else
+			toggle.color.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			local find = table.find(self.library.themeitems["accent"]["BackgroundColor3"],toggle.color)
+			if find then
+				table.remove(self.library.themeitems["accent"]["BackgroundColor3"],find)
+			end
+		end
+	end
+end
+--
+function sections:button(props)
+	-- // properties
+	local name = props.name or props.Name or "new button"
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	-- // variables
+	local button = {}
+	-- // main
+	local buttonholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,20),
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = buttonholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline2
+		}
+	)
+	--
+	local gradient = utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	--
+	local buttonpress = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			Font = self.library.font,
+			Parent = buttonholder
+		}
+	)
+	--
+	buttonpress.MouseButton1Down:Connect(function()
+		callback()
+		outline.BorderColor3 = self.library.theme.accent
+		table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
+		wait(0.05)
+		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+		if find then
+			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+		end
+	end)
+	-- // button tbl
+	button = {
+		["library"] = self.library
+	}
+	--
+	self.library.labels[#self.library.labels+1] = buttonpress
+	-- // metatable indexing + return
+	setmetatable(button, buttons)
+	return button
+end
+--
+function sections:slider(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local def = props.def or props.Def or props.default or props.Default or 0
+	local max = props.max or props.Max or props.maximum or props.Maximum or 100
+	local min = props.min or props.Min or props.minimum or props.Minimum or 0
+	local rounding = props.rounding or props.Rounding or props.round or props.Round or props.decimals or props.Decimals or false
+	local ticking = props.tick or props.Tick or props.ticking or props.Ticking or false
+	local measurement = props.measurement or props.Measurement or props.digit or props.Digit or props.calc or props.Calc or ""
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	def = math.clamp(def,min,max)
+	-- // variables
+	local slider = {}
+	-- // main
+	local sliderholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,25),
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,12),
+			Position = UDim2.new(0,0,0,15),
+			Parent = sliderholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline
+		}
+	)	
+	--
+	local value = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,2),
+			Position = UDim2.new(0,0,0.5,0),
+			Font = self.library.font,
+			Text = def..measurement.."/"..max..measurement,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			ZIndex = 3,
+			Parent = outline
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline2
+		}
+	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	--
+	local slide = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = self.library.theme.accent,
+			BorderSizePixel = 0,
+			Size = UDim2.new((1 / color.AbsoluteSize.X) * (color.AbsoluteSize.X / (max - min) * (def - min)),0,1,0),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
+	table.insert(self.library.themeitems["accent"]["BackgroundColor3"],slide)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = slide
+		}
+	)
+	--
+	local sliderbutton = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			Parent = sliderholder
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = sliderholder
+		}
+	)
+	-- // slider tbl
+	slider = {
+		["library"] = self.library,
+		["outline"] = outline,
+		["sliderbutton"] = sliderbutton,
+		["title"] = title,
+		["value"] = value,
+		["slide"] = slide,
+		["color"] = color,
+		["max"] = max,
+		["min"] = min,
+		["current"] = def,
+		["measurement"] = measurement,
+		["tick"] = ticking,
+		["rounding"] = rounding,
+		["callback"] = callback
+	}
+	--
+	local function slide()
+		local size = math.clamp(plr:GetMouse().X - slider.color.AbsolutePosition.X ,0 ,slider.color.AbsoluteSize.X)
+		local result = (slider.max - slider.min) / slider.color.AbsoluteSize.X * size + slider.min
+		if slider.rounding then
+			local newres = math.floor(result)
+			value.Text = newres..slider.measurement.."/"..slider.max..slider.measurement
+			slider.current = newres
+			slider.callback(newres)
+			if slider.tick then
+				slider.slide:TweenSize(UDim2.new((1 / slider.color.AbsoluteSize.X) * (slider.color.AbsoluteSize.X / (slider.max - slider.min) * (newres - slider.min)) ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+			else
+				slider.slide:TweenSize(UDim2.new((1 / slider.color.AbsoluteSize.X) * size ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+			end
+		else
+			local newres = utility.round(result ,2)
+			value.Text = newres..slider.measurement.."/"..slider.max..slider.measurement
+			slider.current = newres
+			slider.callback(newres)
+			if slider.tick then
+				slider.slide:TweenSize(UDim2.new((1 / slider.color.AbsoluteSize.X) * (slider.color.AbsoluteSize.X / (slider.max - slider.min) * (newres - slider.min)) ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+			else
+				slider.slide:TweenSize(UDim2.new((1 / slider.color.AbsoluteSize.X) * size ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+			end
+		end
+	end
+	--
+	sliderbutton.MouseButton1Down:Connect(function()
+		slider.holding = true
+		slide()
+		table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
+		outline.BorderColor3 = self.library.theme.accent
+	end)
+	--
+	uis.InputChanged:Connect(function()
+		if slider.holding then
+			slide()
+		end
+	end)
+	--
+	uis.InputEnded:Connect(function(Input)
+		if Input.UserInputType.Name == 'MouseButton1' and slider.holding then
+			slider.holding = false
+			outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+			local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+			if find then
+				table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+			end
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = slider
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	self.library.labels[#self.library.labels+1] = value
+	-- // metatable indexing + return
+	setmetatable(slider, sliders)
+	return slider
+end
+--
+function sliders:set(value)
+	local size = math.clamp((self.color.AbsoluteSize.X / (self.max - self.min) * (value - self.min)) ,0 ,self.color.AbsoluteSize.X)
+	local result = value
+	if self.rounding then
+		local newres = math.floor(result)
+		self.value.Text = newres..self.measurement.."/"..self.max..self.measurement
+		self.current = newres
+		self.callback(newres)
+		if self.tick then
+			self.slide:TweenSize(UDim2.new((1 / self.color.AbsoluteSize.X) * (self.color.AbsoluteSize.X / (self.max - self.min) * (newres - self.min)) ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+		else
+			self.slide:TweenSize(UDim2.new((1 / self.color.AbsoluteSize.X) * size ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+		end
+	else
+		local newres = utility.round(result ,2)
+		self.value.Text = newres..self.measurement.."/"..self.max..self.measurement
+		self.current = newres
+		self.callback(newres)
+		if self.tick then
+			self.slide:TweenSize(UDim2.new((1 / self.color.AbsoluteSize.X) * (self.color.AbsoluteSize.X / (self.max - self.min) * (newres - self.min)) ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+		else
+			self.slide:TweenSize(UDim2.new((1 / self.color.AbsoluteSize.X) * size ,0 ,1 ,0) ,Enum.EasingDirection.Out ,Enum.EasingStyle.Quad ,0.15 ,true)
+		end
+	end
+end
+--
+function library:closewindows(ignore)
+	local window = self
+	--
+	for i,v in pairs(window.dropdowns) do
+		if v ~= ignore then
+			if v.open then
+				v.optionsholder.Visible = false
+				v.indicator.Text = "-"
+				v.open = false
+			end
+		end
+	end
+	--
+	for i,v in pairs(window.multiboxes) do
+		if v ~= ignore then
+			if v.open then
+				v.optionsholder.Visible = false
+				v.indicator.Text = "-"
+				v.open = false
+			end
+		end
+	end
+	--
+	for i,v in pairs(window.buttonboxs) do
+		if v ~= ignore then
+			if v.open then
+				v.optionsholder.Visible = false
+				v.indicator.Text = "-"
+				v.open = false
+			end
+		end
+	end
+	--
+	for i,v in pairs(window.colorpickers) do
+		if v ~= ignore then
+			if v.open then
+				v.cpholder.Visible = false
+				v.open = false
+			end
+		end
+	end
+end
+--
+function sections:dropdown(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local def = props.def or props.Def or props.default or props.Default or ""
+	local max = props.max or props.Max or props.maximum or props.Maximum or 4
+	local options = props.options or props.Options or props.Settings or props.settings or {}
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	-- // variables
+	local dropdown = {}
+	-- // main
+	local dropdownholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,35),
+			ZIndex = 2,
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,15),
+			Parent = dropdownholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline2
+		}
+	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	--
+	local value = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-20,1,0),
+			Position = UDim2.new(0,5,0,0),
+			Font = self.library.font,
+			Text = def,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			ClipsDescendants = true,
+			Parent = outline
+		}
+	)
+	--
+	local indicator = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,1,0),
+			Position = UDim2.new(0.5,0,0,0),
+			Font = self.library.font,
+			Text = "+",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Right",
+			ClipsDescendants = true,
+			Parent = outline
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = dropdownholder
+		}
+	)
+	--
+	local dropdownbutton = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			Parent = dropdownholder
+		}
+	)
+	--
+	local optionsholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,34),
+			Visible = false,
+			Parent = dropdownholder
+		}
+	)
+	--
+	local size = #options
+	--
+	size = math.clamp(size,1,max)
+	--
+	local optionsoutline = utility.new(
+		"ScrollingFrame",
+		{
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,size,2),
+			Position = UDim2.new(0,0,0,0),
+			ClipsDescendants = true,
+			CanvasSize = UDim2.new(0,0,0,18*#options),
+			ScrollBarImageTransparency = 0.25,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 5,
+			VerticalScrollBarInset = "ScrollBar",
+			VerticalScrollBarPosition = "Right",
+			ZIndex = 5,
+			Parent = optionsholder
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Parent = optionsoutline
+		}
+	)
+	-- // dropdown tbl
+	dropdown = {
+		["library"] = self.library,
+		["optionsholder"] = optionsholder,
+		["indicator"] = indicator,
+		["options"] = options,
+		["title"] = title,
+		["value"] = value,
+		["open"] = false,
+		["titles"] = {},
+		["current"] = def,
+		["callback"] = callback
+	}
+	--
+	table.insert(dropdown.library.dropdowns,dropdown)
+	--
+	for i,v in pairs(options) do
+		local ddoptionbutton = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,0,18),
+				Text = "",
+				ZIndex = 6,
+				Parent = optionsoutline
+			}
+		)
+		--
+		local ddoptiontitle = utility.new(
+			"TextLabel",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-10,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				Font = self.library.font,
+				Text = v,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				TextXAlignment = "Left",
+				ClipsDescendants = true,
+				ZIndex = 6,
+				Parent = ddoptionbutton
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = ddoptiontitle
+		--
+		table.insert(dropdown.titles,ddoptiontitle)
+		--
+		if v == dropdown.current then ddoptiontitle.TextColor3 = self.library.theme.accent end
+		--
+		ddoptionbutton.MouseButton1Down:Connect(function()
+			optionsholder.Visible = false
+			dropdown.open = false
+			indicator.Text = "+"
+			for z,x in pairs(dropdown.titles) do
+				if x.TextColor3 == self.library.theme.accent then
+					x.TextColor3 = Color3.fromRGB(255,255,255)
+				end
+			end
+			dropdown.current = v
+			dropdown.value.Text = v
+			ddoptiontitle.TextColor3 = self.library.theme.accent
+			table.insert(self.library.themeitems["accent"]["TextColor3"],ddoptiontitle)
+			dropdown.callback(v)
+		end)
+	end
+	--
+	dropdownbutton.MouseButton1Down:Connect(function()
+		dropdown.library:closewindows(dropdown)
+		for i,v in pairs(dropdown.titles) do
+			if v.Text == dropdown.current then
+				v.TextColor3 = dropdown.library.theme.accent
+			else
+				v.TextColor3 = Color3.fromRGB(255,255,255)
+			end
+		end
+		optionsholder.Visible = not dropdown.open
+		dropdown.open = not dropdown.open
+		if dropdown.open then
+			indicator.Text = "-"
+		else
+			indicator.Text = "+"
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = dropdown
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	self.library.labels[#self.library.labels+1] = value
+	-- // metatable indexing + return
+	setmetatable(dropdown, dropdowns)
+	return dropdown
+end
+--
+function sections:buttonbox(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local def = props.def or props.Def or props.default or props.Default or ""
+	local max = props.max or props.Max or props.maximum or props.Maximum or 4
+	local options = props.options or props.Options or props.Settings or props.settings or {}
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	-- // variables
+	local buttonbox = {}
+	-- // main
+	local buttonboxholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,35),
+			ZIndex = 2,
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,15),
+			Parent = buttonboxholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline2
+		}
+	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	--
+	local indicator = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,1,0),
+			Position = UDim2.new(0.5,0,0,0),
+			Font = self.library.font,
+			Text = "+",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Right",
+			ClipsDescendants = true,
+			Parent = outline
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = buttonboxholder
+		}
+	)
+	--
+	local buttonboxbutton = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			Parent = buttonboxholder
+		}
+	)
+	--
+	local optionsholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,34),
+			Visible = false,
+			Parent = buttonboxholder
+		}
+	)
+	--
+	local size = #options
+	--
+	size = math.clamp(size,1,max)
+	--
+	local optionsoutline = utility.new(
+		"ScrollingFrame",
+		{
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,size,2),
+			Position = UDim2.new(0,0,0,0),
+			ClipsDescendants = true,
+			CanvasSize = UDim2.new(0,0,0,18*#options),
+			ScrollBarImageTransparency = 0.25,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 5,
+			VerticalScrollBarInset = "ScrollBar",
+			VerticalScrollBarPosition = "Right",
+			ZIndex = 5,
+			Parent = optionsholder
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Parent = optionsoutline
+		}
+	)
+	-- // buttonbox tbl
+	buttonbox = {
+		["library"] = self.library,
+		["optionsholder"] = optionsholder,
+		["indicator"] = indicator,
+		["options"] = options,
+		["title"] = title,
+		["open"] = false,
+		["titles"] = {},
+		["current"] = def,
+		["callback"] = callback
+	}
+	--
+	table.insert(buttonbox.library.buttonboxs,buttonbox)
+	--
+	for i,v in pairs(options) do
+		local bboptionbutton = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,0,18),
+				Text = "",
+				ZIndex = 6,
+				Parent = optionsoutline
+			}
+		)
+		--
+		local bboptiontitle = utility.new(
+			"TextLabel",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-10,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				Font = self.library.font,
+				Text = v,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				TextXAlignment = "Left",
+				ClipsDescendants = true,
+				ZIndex = 6,
+				Parent = bboptionbutton
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = bboptiontitle
+		--
+		table.insert(buttonbox.titles,bboptiontitle)
+		--
+		bboptionbutton.MouseButton1Down:Connect(function()
+			optionsholder.Visible = false
+			buttonbox.open = false
+			indicator.Text = "+"
+			buttonbox.current = v
+			buttonbox.callback(v)
+		end)
+	end
+	--
+	buttonboxbutton.MouseButton1Down:Connect(function()
+		buttonbox.library:closewindows(buttonbox)
+		optionsholder.Visible = not buttonbox.open
+		buttonbox.open = not buttonbox.open
+		if buttonbox.open then
+			indicator.Text = "-"
+		else
+			indicator.Text = "+"
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = buttonbox
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	-- // metatable indexing + return
+	setmetatable(buttonbox, buttonboxs)
+	return buttonbox
+end
+--
+function dropdowns:set(value)
+	if value ~= nil then
+		local dropdown = self
+		if table.find(dropdown.options,value) then
+			self.current = tostring(value)
+			self.value.Text = tostring(value)
+			self.callback(tostring(value))
+			for z,x in pairs(dropdown.titles) do
+				if x.Text == value then
+					x.TextColor3 = dropdown.library.theme.accent
+				else
+					x.TextColor3 = Color3.fromRGB(255,255,255)
+				end
+			end
+		end
+	end
+end
+--
+function sections:multibox(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local def = props.def or props.Def or props.default or props.Default or {}
+	local max = props.max or props.Max or props.maximum or props.Maximum or 4
+	local options = props.options or props.Options or props.Settings or props.settings or {}
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	local defstr = ""
+	if #def > 1 then
+		for i,v in pairs(def) do
+			if i == #def then
+				defstr = defstr..v
+			else
+				defstr = defstr..v..", "
+			end
+		end
+	else
+		for i,v in pairs(def) do
+			defstr = defstr..v
+		end
+	end
+	-- // variables
+	local multibox = {}
+	-- // main
+	local multiboxholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,35),
+			ZIndex = 2,
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,15),
+			Parent = multiboxholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline2
+		}
+	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	--
+	local value = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-20,1,0),
+			Position = UDim2.new(0,5,0,0),
+			Font = self.library.font,
+			Text = defstr,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			ClipsDescendants = true,
+			Parent = outline
+		}
+	)
+	--
+	local indicator = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,1,0),
+			Position = UDim2.new(0.5,0,0,0),
+			Font = self.library.font,
+			Text = "+",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Right",
+			ClipsDescendants = true,
+			Parent = outline
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = multiboxholder
+		}
+	)
+	--
+	local dropdownbutton = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			Parent = multiboxholder
+		}
+	)
+	--
+	local optionsholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,34),
+			Visible = false,
+			Parent = multiboxholder
+		}
+	)
+	--
+	local size = #options
+	--
+	size = math.clamp(size,1,max)
+	--
+	local optionsoutline = utility.new(
+		"ScrollingFrame",
+		{
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,size,2),
+			Position = UDim2.new(0,0,0,0),
+			ClipsDescendants = true,
+			CanvasSize = UDim2.new(0,0,0,18*#options),
+			ScrollBarImageTransparency = 0.25,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 5,
+			VerticalScrollBarInset = "ScrollBar",
+			VerticalScrollBarPosition = "Right",
+			ZIndex = 5,
+			Parent = optionsholder
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Parent = optionsoutline
+		}
+	)
+	-- // dropdown tbl
+	multibox = {
+		["library"] = self.library,
+		["indicator"] = indicator,
+		["optionsholder"] = optionsholder,
+		["options"] = options,
+		["value"] = value,
+		["open"] = false,
+		["titles"] = {},
+		["current"] = def,
+		["callback"] = callback
+	}
+	--
+	table.insert(multibox.library.multiboxes,multibox)
+	--
+	for i,v in pairs(options) do
+		local ddoptionbutton = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,0,18),
+				Text = "",
+				ZIndex = 6,
+				Parent = optionsoutline
+			}
+		)
+		--
+		local ddoptiontitle = utility.new(
+			"TextLabel",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-10,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				Font = self.library.font,
+				Text = v,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				TextXAlignment = "Left",
+				ClipsDescendants = true,
+				ZIndex = 6,
+				Parent = ddoptionbutton
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = ddoptiontitle
+		--
+		table.insert(multibox.titles,ddoptiontitle)
+		--
+		for c,b in pairs(def) do if v == b then ddoptiontitle.TextColor3 = self.library.theme.accent end end
+		--
+		ddoptionbutton.MouseButton1Down:Connect(function()
+			local find = table.find(multibox.current,v)
+			if find == nil then
+				table.insert(multibox.current,v)
+				local str = ""
+				if #multibox.current > 1 then
+					for i,v in pairs(multibox.current) do
+						if i == #multibox.current then
+							str = str..v
+						else
+							str = str..v..", "
+						end
+					end
+				else
+					for i,v in pairs(multibox.current) do
+						str = str..v
+					end
+				end
+				value.Text = str
+				ddoptiontitle.TextColor3 = self.library.theme.accent
+				table.insert(self.library.themeitems["accent"]["TextColor3"],ddoptiontitle)
+				multibox.callback(multibox.current)
+			else
+				table.remove(multibox.current,find)
+				local str = ""
+				if #multibox.current > 1 then
+					for i,v in pairs(multibox.current) do
+						if i == #multibox.current then
+							str = str..v
+						else
+							str = str..v..", "
+						end
+					end
+				else
+					for i,v in pairs(multibox.current) do
+						str = str..v
+					end
+				end
+				value.Text = str
+				ddoptiontitle.TextColor3 = Color3.fromRGB(255,255,255)
+				multibox.callback(multibox.current)
+			end
+		end)
+	end
+	--
+	dropdownbutton.MouseButton1Down:Connect(function()
+		multibox.library:closewindows(multibox)
+		for i,v in pairs(multibox.titles) do
+			if v.TextColor3 ~= Color3.fromRGB(255,255,255) then
+				v.TextColor3 = self.library.theme.accent
+			end
+		end
+		optionsholder.Visible = not multibox.open
+		multibox.open = not multibox.open
+		if multibox.open then
+			indicator.Text = "-"
+		else
+			indicator.Text = "+"
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = multibox
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = value
+	self.library.labels[#self.library.labels+1] = title
+	-- // metatable indexing + return
+	setmetatable(multibox, multiboxs)
+	return multibox
+end
+--
+function buttonboxs:set(value)
+	if value ~= nil then
+		local dropdown = self
+		if table.find(dropdown.options,value) then
+			self.current = tostring(value)
+			self.callback(tostring(value))
+		end
+	end
+end
+--
+function multiboxs:set(tbl)
+	if tbl then
+		local multibox = self
+		if typeof(tbl) == "table" then
+			multibox.current = {}
+			for i,v in pairs(tbl) do
+				if table.find(multibox.options,v) then
+					table.insert(multibox.current,v)
+				end
+			end
+			--
+			for i,v in pairs(multibox.titles) do
+				if v.TextColor3 == multibox.library.theme.accent then
+					v.TextColor3 = Color3.fromRGB(255,255,255)
+				end
+				if table.find(tbl,v.Text) then
+					v.TextColor3 = multibox.library.theme.accent
+				end
+			end
+			--
+			local str = ""
+			if #multibox.current > 1 then
+				for i,v in pairs(multibox.current) do
+					if i == #multibox.current then
+						str = str..v
+					else
+						str = str..v..", "
+					end
+				end
+			else
+				for i,v in pairs(multibox.current) do
+					str = str..v
+				end
+			end
+			--
+			multibox.value.Text = str
+		end
+	end
+end
+--
+function sections:textbox(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local def = props.def or props.Def or props.default or props.Default or ""
+	local placeholder = props.placeholder or props.Placeholder or props.placeHolder or props.PlaceHolder or props.placeholdertext or props.PlaceHolderText or props.PlaceHoldertext or props.placeHolderText or props.placeHoldertext or props.Placeholdertext or props.PlaceholderText or props.placeholderText or ""
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	-- // variables
+	local textbox = {}
+	-- // main
+	local textboxholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,35),
+			ZIndex = 2,
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,20),
+			Position = UDim2.new(0,0,0,15),
+			Parent = textboxholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline2
+		}
+	)
+	--
+	local gradient = utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	--
+	local button = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			Font = self.library.font,
+			Parent = textboxholder
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = textboxholder
+		}
+	)
+	--
+	local tbox = utility.new(
+		"TextBox",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,0,20),
+			Position = UDim2.new(0.5,0,0,15),
+			PlaceholderText = placeholder,
+			Text = def,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextTruncate = "AtEnd",
+			Font = self.library.font,
+			Parent = textboxholder
+		}
+	)
+	-- // textbox tbl
+	textbox = {
+		["library"] = self.library,
+		["tbox"] = tbox,
+		["current"] = def,
+		["callback"] = callback
+	}
+	--
+	button.MouseButton1Down:Connect(function()
+		tbox:CaptureFocus()
+	end)
+	--
+	tbox.Focused:Connect(function()
+		outline.BorderColor3 = self.library.theme.accent
+		table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
+	end)
+	--
+	tbox.FocusLost:Connect(function(enterPressed)
+		textbox.current = tbox.Text
+		callback(tbox.Text)
+		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+		if find then
+			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = textbox
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	self.library.labels[#self.library.labels+1] = tbox
+	-- // metatable indexing + return
+	setmetatable(textbox, textboxs)
+	return textbox
+end
+--
+function textboxs:set(value)
+	self.tbox.Text = value
+	self.current = value
+	self.callback(value)
+end
+--
+function sections:keybind(props)
+	-- // properties
+	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+	local def = props.def or props.Def or props.default or props.Default or nil
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	local allowed = props.allowed or props.Allowed or 1
+	--
+	local default = ".."
+	local typeis = nil
+	--
+	if typeof(def) == "EnumItem" then
+		if def == Enum.UserInputType.MouseButton1 then
+			if allowed == 1 then
+				default = "MB1"
+				typeis = "UserInputType"
+			end
+		elseif def == Enum.UserInputType.MouseButton2 then
+			if allowed == 1 then
+				default = "MB2"
+				typeis = "UserInputType"
+			end
+		elseif def == Enum.UserInputType.MouseButton3 then
+			if allowed == 1 then
+				default = "MB3"
+				typeis = "UserInputType"
+			end
+		else
+			local capd = utility.capatalize(def.Name)
+			if #capd > 1 then
+				default = capd
+			else
+				default = def.Name
+			end
+			typeis = "KeyCode"
+		end
+	end
+	-- // variables
+	local keybind = {}
+	-- // main
+	local keybindholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,17),
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,40,1,0),
+			Position = UDim2.new(1,0,0,0),
+			Parent = keybindholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline
+		}
+	)
+	--
+	local value = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = default,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Center",
+			Parent = outline
+		}
+	)
+	--
+	outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = outline2
+		}
+	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = color
+		}
+	)
+	--
+	local button = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			Font = self.library.font,
+			Parent = keybindholder
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = keybindholder
+		}
+	)
+	-- // keybind tbl
+	keybind = {
+		["library"] = self.library,
+		["down"] = false,
+		["outline"] = outline,
+		["value"] = value,
+		["allowed"] = allowed,
+		["current"] = {typeis,utility.splitenum(def)},
+		["pressed"] = false,
+		["callback"] = callback
+	}
+	--
+	button.MouseButton1Down:Connect(function()
+		if keybind.down == false then
+			outline.BorderColor3 = self.library.theme.accent
+			table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
+			wait()
+			keybind.down = true
+		end
+	end)
+	--
+	button.MouseButton2Down:Connect(function()
+		keybind.down = false
+		keybind.current = {nil,nil}
+		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+		if find then
+			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+		end
+		value.Text = ".."
+		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+	end)
+	--
+	local function turn(typeis,current)
+		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+		keybind.down = false
+		keybind.current = {typeis,utility.splitenum(current)}
+		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+		if find then
+			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+		end
+	end
+	--
+	uis.InputBegan:Connect(function(Input)
+		if keybind.down then
+			if Input.UserInputType == Enum.UserInputType.Keyboard then
+				local capd = utility.capatalize(Input.KeyCode.Name)
+				if #capd > 1 then
+					value.Text = capd
+				else
+					value.Text = Input.KeyCode.Name
+				end
+				turn("KeyCode",Input.KeyCode)
+				callback(Input.KeyCode)
+			end
+			if allowed == 1 then
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+					value.Text = "MB1"
+					turn("UserInputType",Input)
+					callback(Input)
+				elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
+					value.Text = "MB2"
+					turn("UserInputType",Input)
+					callback(Input)
+				elseif Input.UserInputType == Enum.UserInputType.MouseButton3 then
+					value.Text = "MB3"
+					turn("UserInputType",Input)
+					callback(Input)
+				end
+			end
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = keybind
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	self.library.labels[#self.library.labels+1] = value
+	-- // metatable indexing + return
+	setmetatable(keybind, keybinds)
+	return keybind
+end
+--
+function keybinds:set(key)
+	if key then
+		if typeof(key) == "EnumItem" or typeof(key) == "table" then
+			if typeof(key) == "table" then
+				if key[1] and key[2] then
+					key = Enum[key[1]][key[2]]
+				else
+					return
+				end
+			end
+			local keybind = self
+			local typeis = ""
+			--
+			local default = ".."
+			--
+			if key == Enum.UserInputType.MouseButton1 then
+				if keybind.allowed == 1 then
+					default = "MB1"
+					typeis = "UserInputType"
+				end
+			elseif key == Enum.UserInputType.MouseButton2 then
+				if keybind.allowed == 1 then
+					default = "MB2"
+					typeis = "UserInputType"
+				end
+			elseif key == Enum.UserInputType.MouseButton3 then
+				if keybind.allowed == 1 then
+					default = "MB3"
+					typeis = "UserInputType"
+				end
+			else
+				local capd = utility.capatalize(key.Name)
+				if #capd > 1 then
+					default = capd
+				else
+					default = key.Name
+				end
+				typeis = "KeyCode"
+			end
+			--
+			keybind.value.Text = default
+			keybind.current = {typeis,utility.splitenum(key)}
+			keybind.callback(keybind.current)
+			keybind.outline.Size = UDim2.new(0,keybind.value.TextBounds.X+20,1,0)
+			--
+			if keybind.down then
+				keybind.down = false
+				keybind.outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+				local find = table.find(self.library.themeitems["accent"]["BorderColor3"],keybind.outline)
+				if find then
+					table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+				end
+			end
+		end
+	end
+end
+--
+function sections:colorpicker(props)
+	-- // properties
+	local name = props.name or props.Name or "new colorpicker"
+	local cpname = props.cpname or props.Cpname or props.CPname or props.CPName or props.cPname or props.cpName or props.colorpickername or nil
+	local def = props.def or props.Def or props.default or props.Default or Color3.fromRGB(255,255,255)
+	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	--
+	local h,s,v = def:ToHSV()
+	-- // variables
+	local colorpicker = {}
+	-- // main
+	local colorpickerholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			ZIndex = 2,
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,30,1,0),
+			Position = UDim2.new(1,0,0,0),
+			Parent = colorpickerholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline
+		}
+	)
+	--
+	local cpcolor = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = def,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline2
+		}
+	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+			Rotation = 90,
+			Parent = cpcolor
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Font = self.library.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			Parent = colorpickerholder
+		}
+	)
+	--
+	local button = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			Font = self.library.font,
+			Parent = colorpickerholder
+		}
+	)
+	--
+	local cpholder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,0,230),
+			Position = UDim2.new(0,0,1,5),
+			Visible = false,
+			ZIndex = 5,
+			Parent = colorpickerholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			ZIndex = 5,
+			Parent = cpholder
+		}
+	)
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = self.library.theme.accent,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,-2,0,1),
+			Position = UDim2.new(0.5,0,0,0),
+			ZIndex = 5,
+			Parent = outline2
+		}
+	)
+	--
+	table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
+	--
+	local cptitle = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,0,20),
+			Position = UDim2.new(0.5,0,0,0),
+			Font = self.library.font,
+			Text = cpname or name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			ZIndex = 5,
+			Parent = outline2
+		}
+	)
+	--
+	local cpholder2 = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0.875,0,0,150),
+			Position = UDim2.new(0,5,0,20),
+			ZIndex = 5,
+			Parent = outline2
+		}
+	)
+	--
+	local outline3 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromHSV(h,1,1),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			ZIndex = 5,
+			Parent = cpholder2
+		}
+	)
+	--
+	local cpimage = utility.new(
+		"ImageButton",
+		{
+			AutoButtonColor = false,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			ZIndex = 5,
+			Image = "rbxassetid://7074305282",
+			Parent = outline3
+		}
+	)
+	--
+	local cpcursor = utility.new(
+		"ImageLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(0,6,0,6),
+			Position = UDim2.new(s,0,1-v,0),
+			ZIndex = 5,
+			Image = "rbxassetid://7074391319",
+			Parent = cpimage
+		}
+	)
+	--
+	local huepicker = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0.05,0,0,150),
+			Position = UDim2.new(1,-5,0,20),
+			ZIndex = 5,
+			Parent = outline2
+		}
+	)
+	--
+	local outline4 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			ZIndex = 5,
+			Parent = huepicker
+		}
+	)
+	--
+	local huebutton = utility.new(
+		"TextButton",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Text = "",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			Font = self.library.font,
+			ZIndex = 5,
+			Parent = huepicker
+		}
+	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 4)), ColorSequenceKeypoint.new(0.10, Color3.fromRGB(255, 153, 0)), ColorSequenceKeypoint.new(0.20, Color3.fromRGB(209, 255, 0)), ColorSequenceKeypoint.new(0.30, Color3.fromRGB(55, 255, 0)), ColorSequenceKeypoint.new(0.40, Color3.fromRGB(0, 255, 102)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)), ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 102, 255)), ColorSequenceKeypoint.new(0.70, Color3.fromRGB(51, 0, 255)), ColorSequenceKeypoint.new(0.80, Color3.fromRGB(204, 0, 255)), ColorSequenceKeypoint.new(0.90, Color3.fromRGB(255, 0, 153)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 4))},
+			Rotation = 90,
+			Parent = outline4
+		}
+	)
+	--
+	local huecursor = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,12,0,6),
+			Position = UDim2.new(0.5,0,h,0),
+			ZIndex = 5,
+			Parent = outline4
+		}
+	)
+	--
+	local huecursor_inline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromHSV(h,1,1),
+			BorderColor3 = Color3.fromRGB(255, 255, 255),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			ZIndex = 5,
+			Parent = huecursor
+		}
+	)
+	--
+	local function textbox(parent,size,position)
+		local textbox_holder = utility.new(
+			"Frame",
+			{
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Position = position,
+				Size = size,
+				ZIndex = 5,
+				Parent = parent
+			}
+		)
+		--
+		local outline5 = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(12, 12, 12),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 5,
+				Parent = textbox_holder
+			}
+		)
+		--
+		local outline6 = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(56, 56, 56),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 5,
+				Parent = outline5
+			}
+		)
+		--
+		local color2 = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+				BorderSizePixel = 0,
+				Size = UDim2.new(1,0,0,0),
+				Position = UDim2.new(0,0,0,0),
+				ZIndex = 5,
+				Parent = outline6
+			}
+		)
+		--
+		utility.new(
+			"UIGradient",
+			{
+				Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+				Rotation = 90,
+				Parent = color2
+			}
+		)
+		--
+		local tbox = utility.new(
+			"TextBox",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				PlaceholderColor3 = Color3.fromRGB(255,255,255),
+				PlaceholderText = "",
+				Text = "",
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				Font = self.library.font,
+				ZIndex = 5,
+				Parent = textbox_holder
+			}
+		)
+		--
+		local tbox_button = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,1,0),
+				Position = UDim2.new(0,0,0,0),
+				Text = "",
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				Font = self.library.font,
+				ZIndex = 5,
+				Parent = textbox_holder
+			}
+		)
+		--
+		tbox_button.MouseButton1Down:Connect(function()
+			tbox:CaptureFocus()
+		end)
+		--
+		return {textbox_holder,tbox,outline5}
+	end
+	--
+	local red = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
+	local green = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
+	green[1].AnchorPoint = Vector2.new(0.5,0)
+	green[1].Position = UDim2.new(0.5,0,0,175)
+	local blue = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
+	blue[1].AnchorPoint = Vector2.new(1,0)
+	blue[1].Position = UDim2.new(1,-5,0,175)
+	local hex = textbox(outline2,UDim2.new(1,-10,0,20),UDim2.new(0,5,0,200))
+	hex[2].Size = UDim2.new(1,-12,1,0)
+	hex[2].TextXAlignment = "Left"
+	-- // colorpicker tbl
+	colorpicker = {
+		["library"] = self.library,
+		["cpholder"] = cpholder,
+		["cpcolor"] = cpcolor,
+		["huecursor"] = huecursor,
+		["outline3"] = outline3,
+		["huecursor_inline"] = huecursor_inline,
+		["cpcursor"] = cpcursor,
+		["current"] = def,
+		["open"] = false,
+		["cp"] = false,
+		["hue"] = false,
+		["hsv"] = {h,s,v},
+		["red"] = red[2],
+		["green"] = green[2],
+		["blue"] = blue[2],
+		["hex"] = hex[2],
+		["callback"] = callback
+	}
+	--
+	table.insert(self.library.colorpickers,colorpicker)
+	--
+	local function updateboxes()
+		colorpicker.red.PlaceholderText = "R: "..tostring(math.floor(colorpicker.current.R*255))
+		colorpicker.green.PlaceholderText = "G: "..tostring(math.floor(colorpicker.current.G*255))
+		colorpicker.blue.PlaceholderText = "B: "..tostring(math.floor(colorpicker.current.B*255))
+		colorpicker.hex.PlaceholderText = "Hex: "..utility.to_hex(colorpicker.current)
+	end
+	--
+	updateboxes()
+	--
+	local function movehue()
+		local posy = math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
+		local resy = (1/outline3.AbsoluteSize.Y)*posy
+		outline3.BackgroundColor3 = Color3.fromHSV(resy,1,1)
+		huecursor_inline.BackgroundColor3 = Color3.fromHSV(resy,1,1)
+		colorpicker.hsv[1] = resy
+		colorpicker.current = Color3.fromHSV(colorpicker.hsv[1],colorpicker.hsv[2],colorpicker.hsv[3])
+		cpcolor.BackgroundColor3 = colorpicker.current
+		updateboxes()
+		colorpicker.callback(colorpicker.current)
+		huecursor:TweenPosition(UDim2.new(0.5,0,resy,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.15,true)
+	end
+	--
+	local function movecp()
+		local posx,posy = math.clamp(plr:GetMouse().X-outline3.AbsolutePosition.X,0,outline3.AbsoluteSize.X),math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
+		local resx,resy = (1/outline3.AbsoluteSize.X)*posx,(1/outline3.AbsoluteSize.Y)*posy
+		colorpicker.hsv[2] = resx
+		colorpicker.hsv[3] = 1-resy
+		colorpicker.current = Color3.fromHSV(colorpicker.hsv[1],colorpicker.hsv[2],colorpicker.hsv[3])
+		cpcolor.BackgroundColor3 = colorpicker.current
+		updateboxes()
+		colorpicker.callback(colorpicker.current)
+		cpcursor:TweenPosition(UDim2.new(resx,0,resy,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.15,true)
+	end
+	--
+	button.MouseButton1Down:Connect(function()
+		self.library:closewindows(colorpicker)
+		cpholder.Visible = not colorpicker.open
+		colorpicker.open = not colorpicker.open
+	end)
+	--
+	huebutton.MouseButton1Down:Connect(function()
+		colorpicker.hue = true
+		movehue()
+	end)
+	--
+	cpimage.MouseButton1Down:Connect(function()
+		colorpicker.cp = true
+		movecp()
+	end)
+	--
+	uis.InputChanged:Connect(function()
+		if colorpicker.cp then
+			movecp()
+		end
+		if colorpicker.hue then
+			movehue()
+		end
+	end)
+	--
+	uis.InputEnded:Connect(function(Input)
+		if Input.UserInputType.Name == 'MouseButton1'  then
+			if colorpicker.cp then
+				colorpicker.cp = false
+			end
+			if colorpicker.hue then
+				colorpicker.hue = false
+			end
+		end
+	end)
+	--
+	red[2].Focused:Connect(function()
+		red[3].BorderColor3 = self.library.theme.accent
+	end)
+	--
+	red[2].FocusLost:Connect(function()
+		local saved = red[2].Text
+		local num = tonumber(saved)
+		if num then
+			saved = tostring(math.clamp(tonumber(saved),0,255))
+			red[2].Text = ""
+			if saved then
+				if #saved >= 1 and #saved <= 3 then
+					red[2].PlaceholderText = "R: "..tostring(saved)
+				end
+				colorpicker:set(Color3.fromRGB(tonumber(saved),colorpicker.current.G*255,colorpicker.current.B*255))
+				red[3].BorderColor3 = Color3.fromRGB(12,12,12)
+			else
+				red[3].BorderColor3 = Color3.fromRGB(12,12,12)
+			end
+		else
+			red[2].Text = ""
+			red[3].BorderColor3 = Color3.fromRGB(12,12,12)
+		end
+	end)
+	--
+	green[2].Focused:Connect(function()
+		green[3].BorderColor3 = self.library.theme.accent
+	end)
+	--
+	green[2].FocusLost:Connect(function()
+		local saved = green[2].Text
+		local num = tonumber(saved)
+		if num then
+			saved = tostring(math.clamp(tonumber(saved),0,255))
+			green[2].Text = ""
+			if saved then
+				if #saved >= 1 and #saved <= 3 then
+					green[2].PlaceholderText = "G: "..tostring(saved)
+				end
+				colorpicker:set(Color3.fromRGB(colorpicker.current.R*255,tonumber(saved),colorpicker.current.B*255))
+				green[3].BorderColor3 = Color3.fromRGB(12,12,12)
+			else
+				green[3].BorderColor3 = Color3.fromRGB(12,12,12)
+			end
+		else
+			green[2].Text = ""
+			green[3].BorderColor3 = Color3.fromRGB(12,12,12)
+		end
+	end)
+	--
+	blue[2].Focused:Connect(function()
+		blue[3].BorderColor3 = self.library.theme.accent
+	end)
+	--
+	blue[2].FocusLost:Connect(function()
+		local saved = blue[2].Text
+		local num = tonumber(saved)
+		if num then
+			saved = tostring(math.clamp(tonumber(saved),0,255))
+			blue[2].Text = ""
+			if saved then
+				if #saved >= 1 and #saved <= 3 then
+					blue[2].PlaceholderText = "B: "..tostring(saved)
+				end
+				colorpicker:set(Color3.fromRGB(colorpicker.current.R*255,colorpicker.current.G*255,tonumber(saved)))
+				blue[3].BorderColor3 = Color3.fromRGB(12,12,12)
+			else
+				blue[3].BorderColor3 = Color3.fromRGB(12,12,12)
+			end
+		else
+			blue[2].Text = ""
+			blue[3].BorderColor3 = Color3.fromRGB(12,12,12)
+		end
+	end)
+	--
+	hex[2].Focused:Connect(function()
+		hex[3].BorderColor3 = self.library.theme.accent
+	end)
+	--
+	hex[2].FocusLost:Connect(function()
+		local saved = hex[2].Text
+		if #saved >= 6 and #saved <= 7 then
+			local e,s = pcall(function()
+				utility.from_hex(saved)
+			end)
+			if e == true then
+				local hexcolor = utility.from_hex(saved)
+				if hexcolor then
+					colorpicker:set(hexcolor)
+					hex[2].Text = ""
+					hex[3].BorderColor3 = Color3.fromRGB(12,12,12)
+				else
+					hex[2].Text = ""
+					hex[3].BorderColor3 = Color3.fromRGB(12,12,12)
+				end
+			else
+				hex[2].Text = ""
+				hex[3].BorderColor3 = Color3.fromRGB(12,12,12)
+			end
+		else
+			hex[2].Text = ""
+			hex[3].BorderColor3 = Color3.fromRGB(12,12,12)
+		end
+	end)
+	--
+	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+	--
+	if pointer then
+		if self.pointers then
+			self.pointers[tostring(pointer)] = colorpicker
+		end
+	end
+	--
+	self.library.labels[#self.library.labels+1] = title
+	self.library.labels[#self.library.labels+1] = hex[2]
+	self.library.labels[#self.library.labels+1] = red[2]
+	self.library.labels[#self.library.labels+1] = green[2]
+	self.library.labels[#self.library.labels+1] = blue[2]
+	self.library.labels[#self.library.labels+1] = cptitle
+	-- // metatable indexing + return
+	setmetatable(colorpicker, colorpickers)
+	return colorpicker
+end
+--
+function colorpickers:set(color)
+	if color then
+		if typeof(color) == "table" then
+			color = Color3.fromRGB(color[1]*255,color[2]*255,color[3]*255)
+		end
+		local colorpicker = self
+		local h,s,v = color:ToHSV()
+		--
+		local function updateboxes()
+			colorpicker.red.PlaceholderText = "R: "..tostring(math.floor(colorpicker.current.R*255))
+			colorpicker.green.PlaceholderText = "G: "..tostring(math.floor(colorpicker.current.G*255))
+			colorpicker.blue.PlaceholderText = "B: "..tostring(math.floor(colorpicker.current.B*255))
+			colorpicker.hex.PlaceholderText = "Hex: "..utility.to_hex(colorpicker.current)
+		end
+		--
+		local function movehue()
+			colorpicker.outline3.BackgroundColor3 = Color3.fromHSV(h,1,1)
+			colorpicker.huecursor_inline.BackgroundColor3 = Color3.fromHSV(h,1,1)
+			colorpicker.hsv[1] = h
+			colorpicker.current = Color3.fromHSV(colorpicker.hsv[1],colorpicker.hsv[2],colorpicker.hsv[3])
+			colorpicker.cpcolor.BackgroundColor3 = colorpicker.current
+			colorpicker.huecursor:TweenPosition(UDim2.new(0.5,0,h,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.15,true)
+		end
+		--
+		local function movecp()
+			colorpicker.hsv[2] = s
+			colorpicker.hsv[3] = v
+			colorpicker.current = Color3.fromHSV(colorpicker.hsv[1],colorpicker.hsv[2],colorpicker.hsv[3])
+			colorpicker.cpcolor.BackgroundColor3 = colorpicker.current
+			colorpicker.cpcursor:TweenPosition(UDim2.new(s,0,1-v,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.15,true)
+		end
+		--
+		movehue()
+		movecp()
+		updateboxes()
+		colorpicker.callback(colorpicker.current)
+	end
+end
+--
+function sections:configloader(props)
+	-- // properties
+	local folder = props.folder or props.Folder
+	-- // variables
+	local configloader = {}
+	-- // main
+	local clholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,222),
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = clholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Position = UDim2.new(0,0,0,3),
+			Font = self.library.font,
+			Text = "configs",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Center",
+			Parent = outline
+		}
+	)
+	--
+	self.library.labels[#self.library.labels+1] = title
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = self.library.theme.accent,
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-6,0,1),
+			Position = UDim2.new(0.5,0,0,19),
+			Parent = outline
+		}
+	)
+	--
+	table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
+	--
+	local buttonsholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,0,64),
+			Position = UDim2.new(0,0,0,150),
+			Parent = outline
+		}
+	)
+	--
+	local configsholder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-10,0,120),
+			Position = UDim2.new(0.5,0,0,25),
+			Parent = outline
+		}
+	)
+	--
+	local outline3 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			Parent = configsholder
+		}
+	)
+	--
+	local outline4 = utility.new(
+		"ScrollingFrame",
+		{
+			BackgroundColor3 = Color3.fromRGB(56, 56, 56),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			ClipsDescendants = true,
+			AutomaticCanvasSize = "Y",
+			CanvasSize = UDim2.new(0,0,0,0),
+			ScrollBarImageTransparency = 0.25,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 5,
+			VerticalScrollBarInset = "ScrollBar",
+			VerticalScrollBarPosition = "Right",
+			Parent = outline3
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Padding = UDim.new(0,0),
+			Parent = outline4
+		}
+	)
+	--
+	local createdbuttons = {}
+	local selected
+	--
+	local makebutton = function(name,toggled)
+		local createdbutton = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,0,18),
+				Position = UDim2.new(0,0,0,0),
+				Text = "",
+				Parent = outline4
+			}
+		)
+		--
+		local grey = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundColor3 = Color3.fromRGB(125, 125, 125),
+				BackgroundTransparency = 0.9,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1,-4,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				Visible = false,
+				Parent = createdbutton
+			}
+		)
+		--
+		local createdtitle = utility.new(
+			"TextLabel",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-10,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				Font = self.library.font,	
+				Text = name,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				TextXAlignment = "Left",
+				Parent = createdbutton
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = createdtitle
+		--
+		local createdb = {
+			["button"] = createdbutton,
+			["grey"] = grey,
+			["title"] = createdtitle,
+			["name"] = name
+		}
+		--
+		table.insert(createdbuttons,createdb)
+		--
+		if toggled then
+			createdb.grey.Visible = true
+			createdb.title.TextColor3 = self.library.theme.accent
+			table.insert(self.library.themeitems["accent"]["TextColor3"],createdb.title)
+			selected = createdb
+		end
+		--
+		createdbutton.MouseButton1Down:Connect(function()
+			for i,v in pairs(createdbuttons) do
+				if v ~= createdb then
+					v.grey.Visible = false
+					v.title.TextColor3 = Color3.fromRGB(255,255,255)
+					local find = table.find(self.library.themeitems["accent"]["TextColor3"],v.title)
+					if find then
+						table.remove(self.library.themeitems["accent"]["TextColor3"],find)
+					end
+				end
+			end
+			--
+			createdb.grey.Visible = true
+			createdb.title.TextColor3 = self.library.theme.accent
+			table.insert(self.library.themeitems["accent"]["TextColor3"],createdb.title)
+			selected = createdb
+		end)
+	end
+	--
+	local newbutton = function(parent,name)
+		local button_holder = utility.new(
+			"Frame",
+			{
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ZIndex = 5,
+				Parent = parent
+			}
+		)
+		--
+		local button_outline = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(12, 12, 12),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 5,
+				Parent = button_holder
+			}
+		)
+		--
+		local button_outline2 = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(56, 56, 56),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 5,
+				Parent = button_outline
+			}
+		)
+		--
+		local button_color = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+				BorderSizePixel = 0,
+				Size = UDim2.new(1,0,0,0),
+				Position = UDim2.new(0,0,0,0),
+				ZIndex = 5,
+				Parent = button_outline2
+			}
+		)
+		--
+		utility.new(
+			"UIGradient",
+			{
+				Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+				Rotation = 90,
+				Parent = button_color
+			}
+		)
+		--
+		local button_button = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,1,0),
+				Position = UDim2.new(0,0,0,0),
+				Text = name,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				Font = self.library.font,
+				ZIndex = 5,
+				Parent = button_holder
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = button_button
+		--
+		return {button_holder,button_outline,button_button}
+	end
+	--
+	local function textbox(parent)
+		local textbox_holder = utility.new(
+			"Frame",
+			{
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ZIndex = 5,
+				Parent = parent
+			}
+		)
+		--
+		local outline5 = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(12, 12, 12),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 5,
+				Parent = textbox_holder
+			}
+		)
+		--
+		local outline6 = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+				BorderColor3 = Color3.fromRGB(56, 56, 56),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Position = UDim2.new(0,0,0,0),
+				Size = UDim2.new(1,0,1,0),
+				ZIndex = 5,
+				Parent = outline5
+			}
+		)
+		--
+		local color2 = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+				BorderSizePixel = 0,
+				Size = UDim2.new(1,0,0,0),
+				Position = UDim2.new(0,0,0,0),
+				ZIndex = 5,
+				Parent = outline6
+			}
+		)
+		--
+		utility.new(
+			"UIGradient",
+			{
+				Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+				Rotation = 90,
+				Parent = color2
+			}
+		)
+		--
+		local tbox = utility.new(
+			"TextBox",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				PlaceholderColor3 = Color3.fromRGB(178, 178, 178),
+				PlaceholderText = "",
+				Text = "",
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				Font = self.library.font,
+				ZIndex = 5,
+				Parent = textbox_holder
+			}
+		)
+		--
+		local tbox_button = utility.new(
+			"TextButton",
+			{
+				AnchorPoint = Vector2.new(0,0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,1,0),
+				Position = UDim2.new(0,0,0,0),
+				Text = "",
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				Font = self.library.font,
+				ZIndex = 5,
+				Parent = textbox_holder
+			}
+		)
+		--
+		tbox_button.MouseButton1Down:Connect(function()
+			tbox:CaptureFocus()
+		end)
+		--
+		return {textbox_holder,tbox,outline5}
+	end
+	--
+	local refresh = function()
+		for i,v in pairs(createdbuttons) do
+			v.button:Remove()
+			v.grey:Remove()
+			v.title:Remove()
+		end
+		createdbuttons = {}
+		for i,v in pairs(listfiles(folder)) do
+			if v:sub(-4) == ".cfg" then
+				if i == 1 then 
+					makebutton(v:sub(#tostring(folder)+2, -5),true)
+				else
+					makebutton(v:sub(#tostring(folder)+2, -5),false)
+				end
+			end
+		end
+	end
+	--
+	refresh()
+	--
+	local name = textbox(buttonsholder)
+	local load = newbutton(buttonsholder,"Load")
+	local delete = newbutton(buttonsholder,"Delete")
+	local save = newbutton(buttonsholder,"Save")
+	local create = newbutton(buttonsholder,"Create")
+	--
+	name[1].Size = UDim2.new(1,-10,0,20)
+	load[1].Size = UDim2.new(0.5,-6,0,20)
+	delete[1].Size = UDim2.new(0.5,-6,0,20)
+	save[1].Size = UDim2.new(0.5,-6,0,20)
+	create[1].Size = UDim2.new(0.5,-6,0,20)
+	--
+	name[1].Position = UDim2.new(0.5,0,0,0)
+	name[1].AnchorPoint = Vector2.new(0.5,0)
+	--
+	load[1].Position = UDim2.new(0,5,0,22)
+	load[1].AnchorPoint = Vector2.new(0,0)
+	--
+	delete[1].Position = UDim2.new(1,-5,0,22)
+	delete[1].AnchorPoint = Vector2.new(1,0)
+	--
+	save[1].Position = UDim2.new(0,5,0,44)
+	save[1].AnchorPoint = Vector2.new(0,0)
+	--
+	create[1].Position = UDim2.new(1,-5,0,44)
+	create[1].AnchorPoint = Vector2.new(1,0)
+	--
+	name[2].PlaceholderText = "Name"
+	--
+	local currentname = nil
+	--
+	name[2].Focused:Connect(function()
+		name[3].BorderColor3 = self.library.theme.accent
+	end)
+	--
+	name[2].FocusLost:Connect(function()
+		local saved = name[2].Text
+		if #saved >= 3 and #saved <= 15 then
+			currentname = saved
+		else
+			name[2].Text = ""
+			currentname = nil
+		end
+		name[3].BorderColor3 = Color3.fromRGB(12,12,12)
+	end)
+	--
+	load[3].MouseButton1Down:Connect(function()
+		self.library:loadconfig(folder..selected.name..".cfg")
+		load[2].BorderColor3 = self.library.theme.accent
+		wait(0.05)
+		load[2].BorderColor3 = Color3.fromRGB(12,12,12)
+	end)
+	--
+	delete[3].MouseButton1Down:Connect(function()
+		delfile(folder..selected.name..".cfg")
+		delete[2].BorderColor3 = self.library.theme.accent
+		wait(0.05)
+		delete[2].BorderColor3 = Color3.fromRGB(12,12,12)
+		wait()
+		refresh()
+	end)
+	--
+	save[3].MouseButton1Down:Connect(function()
+		writefile(folder..selected.name..".cfg", self.library:saveconfig())
+		save[2].BorderColor3 = self.library.theme.accent
+		wait(0.05)
+		save[2].BorderColor3 = Color3.fromRGB(12,12,12)
+		wait()
+		refresh()
+	end)
+	--
+	create[3].MouseButton1Down:Connect(function()
+		writefile(folder..currentname..".cfg", self.library:saveconfig())
+		create[2].BorderColor3 = self.library.theme.accent
+		wait(0.05)
+		create[2].BorderColor3 = Color3.fromRGB(12,12,12)
+		wait()
+		refresh()
+	end)
+	-- // button tbl
+	configloader = {
+		["library"] = self.library
+	}
+	-- // metatable indexing + return
+	setmetatable(configloader, configloaders)
+	return configloader 
+end
 return library
