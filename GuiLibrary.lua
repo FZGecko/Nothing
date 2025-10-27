@@ -646,9 +646,9 @@ function library:loaderGui(props)
 		library = self,
 		updateProgress = function(self, percentage)
 			percentage = math.clamp(percentage, 0, 100)
-			self.progressBarFill:TweenSize(UDim2.new(percentage / 100, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+			self.progressBarFill:TweenSize(UDim2.new(percentage / 100, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.4, true)
 			self.percentageLabel.Text = tostring(math.floor(percentage)) .. "%"
-			task.wait(0.05) -- Small delay for visual update
+			task.wait(0.1) -- Small delay for visual update
 		end,
 		destroy = function(self)
 			self.screen:Destroy()
