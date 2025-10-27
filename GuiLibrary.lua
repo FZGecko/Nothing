@@ -617,7 +617,7 @@ function library:loaderGui(props)
 			Parent = progressBarBg
 		}
 	)
-	table.insert(self.themeitems["accent"]["BackgroundColor3"], progressBarFill)
+	-- Removed: self.themeitems is not initialized at this point.
 
 	local percentageLabel = utility.new(
 		"TextLabel",
