@@ -3281,10 +3281,9 @@ function sections:keybind(props)
 		if keybind.down == false then
 			outline.BorderColor3 = self.library.theme.accent
 			value.Text = "..."
+			keybind.ignoreNextMouse1 = true -- Set flag immediately to prevent race condition
 			table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
 			keybind.down = true
-			task.wait() -- Allow the current MouseButton1Down event to finish its cycle
-			keybind.ignoreNextMouse1 = true -- Flag to ignore the next MouseButton1 InputBegan if it's the same one that triggered the button
         end
 	end)
 	--
@@ -3314,12 +3313,18 @@ function sections:keybind(props)
 	--
 	uis.InputBegan:Connect(function(Input)
 		if keybind.down then
-			-- Ignore the MouseButton1 event that just activated the keybind capture mode
+			-- Ignore the initial MouseButton1 input that activated capture mode
 			if keybind.ignoreNextMouse1 and Input.UserInputType == Enum.UserInputType.MouseButton1 then
 				keybind.ignoreNextMouse1 = false
 				return
 			end
-			if Input.UserInputType == Enum.UserInputType.Keyboard then
+
+			if Input.KeyCode == Enum.KeyCode.Escape then
+				value.Text = ".."
+				turn("KeyCode", "None", nil)
+				callback(nil)
+				return
+			elseif Input.UserInputType == Enum.UserInputType.Keyboard then
 				local capd = utility.capatalize(Input.KeyCode.Name)
 				if #capd > 1 then
 					value.Text = capd
