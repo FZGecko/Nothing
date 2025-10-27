@@ -15,6 +15,7 @@ local keybinds = {}
 local colorpickers = {}
 local configloaders = {}
 local loaderguis = {}
+local huds = {}
 local watermarks = {}
 local loaders = {}
 --
@@ -47,6 +48,7 @@ keybinds.__index = keybinds
 colorpickers.__index = colorpickers
 configloaders.__index = configloaders
 loaderguis.__index = loaderguis
+huds.__index = huds
 watermarks.__index = watermarks
 loaders.__index = loaders
 -- // functions
@@ -4722,4 +4724,111 @@ function sections:configloader(props)
 	setmetatable(configloader, configloaders)
 	return configloader 
 end
+
+function library:hud(props)
+	local title = props.title or "HUD"
+	local hud = {}
+
+	local mainFrame = utility.new("Frame", {
+		Name = "HUD_Frame",
+		AnchorPoint = Vector2.new(0, 0),
+		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+		BorderColor3 = Color3.fromRGB(12, 12, 12),
+		BorderSizePixel = 1,
+		Size = UDim2.new(0, 200, 0, 0), -- Width is fixed, height is automatic
+		Position = UDim2.new(0, 10, 0.3, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Visible = false, -- Hidden by default
+		Parent = self.screen,
+	})
+
+	local titleBar = utility.new("Frame", {
+		Name = "TitleBar",
+		BackgroundColor3 = self.theme.accent,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, 20),
+		Parent = mainFrame,
+	})
+	table.insert(self.themeitems["accent"]["BackgroundColor3"], titleBar)
+
+	local titleLabel = utility.new("TextLabel", {
+		Name = "TitleLabel",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -10, 1, 0),
+		Position = UDim2.new(0, 5, 0, 0),
+		Font = self.font,
+		Text = title,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		TextSize = self.textsize,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = titleBar,
+	})
+	self.labels[#self.labels + 1] = titleLabel
+
+	local contentFrame = utility.new("Frame", {
+		Name = "ContentFrame",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 0),
+		Position = UDim2.new(0, 0, 0, 20),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Parent = mainFrame,
+	})
+
+	utility.new("UIListLayout", {
+		Padding = UDim.new(0, 2),
+		SortOrder = Enum.SortOrder.Name,
+		Parent = contentFrame,
+	})
+
+	utility.new("UIPadding", {
+		PaddingTop = UDim.new(0, 5),
+		PaddingBottom = UDim.new(0, 5),
+		Parent = contentFrame,
+	})
+
+	utility.dragify(titleBar, mainFrame)
+
+	hud = {
+		frame = mainFrame,
+		content = contentFrame,
+		labels = {}, -- [key] = label
+		Add = function(self, key, text)
+			if self.labels[key] then
+				self.labels[key].Text = text
+				return
+			end
+			local label = utility.new("TextLabel", {
+				Name = tostring(key),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 16),
+				Font = Enum.Font.SourceSans,
+				TextSize = 14,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Text = text,
+				Parent = self.content,
+			})
+			self.labels[key] = label
+		end,
+		Remove = function(self, key)
+			if self.labels[key] then
+				self.labels[key]:Destroy()
+				self.labels[key] = nil
+			end
+		end,
+		Clear = function(self)
+			for key, label in pairs(self.labels) do
+				label:Destroy()
+			end
+			self.labels = {}
+		end,
+		SetVisible = function(self, visible)
+			self.frame.Visible = visible
+		end,
+	}
+
+	setmetatable(hud, huds)
+	return hud
+end
+
 return library
