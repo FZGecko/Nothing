@@ -546,6 +546,125 @@ function watermarks:updateside(side)
 	end
 end
 --
+function library:loaderGui(props)
+	local name = props.name or "Loading ProjectDelta..."
+	local color = props.color or self.theme.accent
+	local loaderGui = {}
+
+	local screen = utility.new(
+		"ScreenGui",
+		{
+			Name = "LoaderGui_" .. tostring(math.random(0,999999)),
+			DisplayOrder = 99999, -- Ensure it's on top of everything
+			ResetOnSpawn = false,
+			ZIndexBehavior = "Global",
+			Parent = cre
+		}
+	)
+
+	if (check_exploit == "Synapse" and syn.request) then
+		syn.protect_gui(screen)
+	end
+
+	local mainFrame = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(0, 300, 0, 100),
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+			Parent = screen
+		}
+	)
+
+	local titleLabel = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 30),
+			Position = UDim2.new(0, 0, 0, 10),
+			Font = self.font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255, 255, 255),
+			TextSize = self.textsize + 2,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Center",
+			Parent = mainFrame
+		}
+	)
+
+	local progressBarBg = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1, -20, 0, 20),
+			Position = UDim2.new(0, 10, 0, 50),
+			Parent = mainFrame
+		}
+	)
+
+	local progressBarFill = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Size = UDim2.new(0, 0, 1, 0), -- Starts at 0%
+			Position = UDim2.new(0, 0, 0, 0),
+			Parent = progressBarBg
+		}
+	)
+	table.insert(self.themeitems["accent"]["BackgroundColor3"], progressBarFill)
+
+	local percentageLabel = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 1, 0),
+			Position = UDim2.new(0, 0, 0, 0),
+			Font = self.font,
+			Text = "0%",
+			TextColor3 = Color3.fromRGB(255, 255, 255),
+			TextSize = self.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Center",
+			Parent = progressBarBg
+		}
+	)
+
+	loaderGui = {
+		screen = screen,
+		mainFrame = mainFrame,
+		titleLabel = titleLabel,
+		progressBarFill = progressBarFill,
+		percentageLabel = percentageLabel,
+		library = self,
+		updateProgress = function(self, percentage)
+			percentage = math.clamp(percentage, 0, 100)
+			self.progressBarFill:TweenSize(UDim2.new(percentage / 100, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+			self.percentageLabel.Text = tostring(math.floor(percentage)) .. "%"
+			task.wait(0.05) -- Small delay for visual update
+		end,
+		destroy = function(self)
+			self.screen:Destroy()
+		end
+	}
+
+	setmetatable(loaderGui, loaderguis)
+	return loaderGui
+end
+
+function loaderguis:updateProgress(percentage)
+	self.updateProgress(self, percentage)
+end
+
+function loaderguis:destroy()
+	self.destroy(self)
+end
+
 function library:loader(props)
 	local name = props.name or props.Name or props.LoaderName or props.Loadername or props.loaderName or props.loadername or "Loader"
 	local scriptname = props.scriptname or props.Scriptname or props.ScriptName or props.scriptName or "Universal"
