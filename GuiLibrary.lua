@@ -3279,10 +3279,10 @@ function sections:keybind(props)
 	button.MouseButton1Down:Connect(function()
 		if keybind.down == false then
 			outline.BorderColor3 = self.library.theme.accent
+			value.Text = "..."
 			table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
-			wait()
 			keybind.down = true
-		end
+        end
 	end)
 	--
 	button.MouseButton2Down:Connect(function()
@@ -3297,15 +3297,16 @@ function sections:keybind(props)
 		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
 	end)
 	--
-	local function turn(typeis,current)
+	local function turn(typeis, current, enum)
 		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
 		keybind.down = false
-		keybind.current = {typeis,utility.splitenum(current)}
+		keybind.current = {typeis, current}
 		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
 		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
 		if find then
 			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
 		end
+		callback(enum)
 	end
 	--
 	uis.InputBegan:Connect(function(Input)
@@ -3317,22 +3318,18 @@ function sections:keybind(props)
 				else
 					value.Text = Input.KeyCode.Name
 				end
-				turn("KeyCode",Input.KeyCode)
-				callback(Input.KeyCode)
+				turn("KeyCode", Input.KeyCode.Name, Input.KeyCode)
 			end
 			if allowed == 1 then
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 					value.Text = "MB1"
-					turn("UserInputType",Input)
-					callback(Input)
+					turn("UserInputType", Input.UserInputType.Name, Input.UserInputType)
 				elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
 					value.Text = "MB2"
-					turn("UserInputType",Input)
-					callback(Input)
+					turn("UserInputType", Input.UserInputType.Name, Input.UserInputType)
 				elseif Input.UserInputType == Enum.UserInputType.MouseButton3 then
 					value.Text = "MB3"
-					turn("UserInputType",Input)
-					callback(Input)
+					turn("UserInputType", Input.UserInputType.Name, Input.UserInputType)
 				end
 			end
 		end
