@@ -14,6 +14,7 @@ local textboxs = {}
 local keybinds = {}
 local colorpickers = {}
 local configloaders = {}
+local loaderguis = {}
 local watermarks = {}
 local loaders = {}
 --
@@ -45,6 +46,7 @@ textboxs.__index = textboxs
 keybinds.__index = keybinds
 colorpickers.__index = colorpickers
 configloaders.__index = configloaders
+loaderguis.__index = loaderguis
 watermarks.__index = watermarks
 loaders.__index = loaders
 -- // functions
@@ -1602,15 +1604,6 @@ function sections:toggle(props)
 	if def then
 		table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
 	end
-	--
-	utility.new(
-		"UIGradient",
-		{
-			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
-			Rotation = 90,
-			Parent = color
-		}
-	)
 	-- // toggle tbl
 	toggle = {
 		["library"] = self.library,
