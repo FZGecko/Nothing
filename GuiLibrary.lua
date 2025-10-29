@@ -3982,7 +3982,7 @@ function sections:colorpicker(props)
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 20, 0, 20),
 		Position = UDim2.new(1, -5, 0, 200),
-		ZIndex = 6, -- ZINDEX FIX
+		ZIndex = 5,
 		Parent = outline2
 	})
 	local rainbowCheckboxOutline = utility.new("Frame", {
@@ -3991,21 +3991,23 @@ function sections:colorpicker(props)
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
 		Size = UDim2.new(1, 0, 1, 0),
+		ZIndex = 5,
 		Parent = rainbowCheckboxHolder
 	})
 	local rainbowCheckboxColor = utility.new("Frame", {
-		Name = "RainbowCheckboxColor", -- Name for easy finding
 		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
 		BorderColor3 = Color3.fromRGB(56, 56, 56),
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
 		Size = UDim2.new(1, 0, 1, 0),
+		ZIndex = 5,
 		Parent = rainbowCheckboxOutline
 	})
 	local rainbowCheckboxButton = utility.new("TextButton", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 1, 0),
 		Text = "",
+		ZIndex = 5,
 		Parent = rainbowCheckboxHolder
 	})
 
@@ -4014,7 +4016,7 @@ function sections:colorpicker(props)
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, -10, 0, 12),
 		Position = UDim2.new(0, 5, 0, 225),
-		ZIndex = 6, -- ZINDEX FIX
+		ZIndex = 5,
 		Parent = outline2
 	})
 	local rainbowSliderOutline = utility.new("Frame", {
@@ -4023,6 +4025,7 @@ function sections:colorpicker(props)
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
 		Size = UDim2.new(1, 0, 1, 0),
+		ZIndex = 5,
 		Parent = rainbowSliderHolder
 	})
 	local rainbowSliderOutline2 = utility.new("Frame", {
@@ -4031,18 +4034,20 @@ function sections:colorpicker(props)
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
 		Size = UDim2.new(1, 0, 1, 0),
+		ZIndex = 5,
 		Parent = rainbowSliderOutline
 	})
 	local rainbowSliderFill = utility.new("Frame", {
 		BackgroundColor3 = self.library.theme.accent,
 		BorderSizePixel = 0,
 		Size = UDim2.new(0.5, 0, 1, 0), -- Default speed 5/10 = 0.5
-		ZIndex = 2,
+		ZIndex = 5,
 		Parent = rainbowSliderOutline
 	})
 	local rainbowSliderButton = utility.new("TextButton", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 1, 0),
+		ZIndex = 5,
 		Text = "",
 		Parent = rainbowSliderHolder
 	})
