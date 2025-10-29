@@ -3982,7 +3982,7 @@ function sections:colorpicker(props)
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 20, 0, 20),
 		Position = UDim2.new(1, -5, 0, 200),
-		ZIndex = 6,
+		ZIndex = 6, -- ZINDEX FIX
 		Parent = outline2
 	})
 	local rainbowCheckboxOutline = utility.new("Frame", {
@@ -3994,6 +3994,7 @@ function sections:colorpicker(props)
 		Parent = rainbowCheckboxHolder
 	})
 	local rainbowCheckboxColor = utility.new("Frame", {
+		Name = "RainbowCheckboxColor", -- Name for easy finding
 		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
 		BorderColor3 = Color3.fromRGB(56, 56, 56),
 		BorderMode = "Inset",
@@ -4013,7 +4014,7 @@ function sections:colorpicker(props)
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, -10, 0, 12),
 		Position = UDim2.new(0, 5, 0, 225),
-		ZIndex = 6,
+		ZIndex = 6, -- ZINDEX FIX
 		Parent = outline2
 	})
 	local rainbowSliderOutline = utility.new("Frame", {
