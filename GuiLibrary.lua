@@ -3947,8 +3947,8 @@ function sections:colorpicker(props)
 	local blue = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
 	blue[1].AnchorPoint = Vector2.new(1,0)
 	blue[1].Position = UDim2.new(1,-5,0,175)
-	-- Shrink hex box to make space for the rainbow button
-	local hex = textbox(outline2,UDim2.new(1, -75, 0, 20),UDim2.new(0, 5, 0, 200))
+	-- Shrink hex box to make space for the rainbow checkbox
+	local hex = textbox(outline2,UDim2.new(1, -40, 0, 20),UDim2.new(0, 5, 0, 200))
 	hex[2].Size = UDim2.new(1,-12,1,0)
 	hex[2].TextXAlignment = "Left"
 	-- // colorpicker tbl
@@ -3976,21 +3976,35 @@ function sections:colorpicker(props)
 		["rainbowSliding"] = false
 	}
 	--
-	-- Rainbow Button
-	local rainbowButton = utility.new("TextButton", {
-		Name = "RainbowButton",
+	-- Rainbow Checkbox
+	local rainbowCheckboxHolder = utility.new("Frame", {
 		AnchorPoint = Vector2.new(1, 0),
-		Size = UDim2.new(0, 60, 0, 20),
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 20, 0, 20),
 		Position = UDim2.new(1, -5, 0, 200),
-		BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-		BorderColor3 = Color3.fromRGB(56, 56, 56),
-		BorderSizePixel = 1,
-		Text = "Rainbow",
-		Font = self.library.font,
-		TextSize = self.library.textsize,
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		ZIndex = 6, -- ZINDEX FIX
 		Parent = outline2
+	})
+	local rainbowCheckboxOutline = utility.new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+		BorderColor3 = Color3.fromRGB(12, 12, 12),
+		BorderMode = "Inset",
+		BorderSizePixel = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = rainbowCheckboxHolder
+	})
+	local rainbowCheckboxColor = utility.new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+		BorderColor3 = Color3.fromRGB(56, 56, 56),
+		BorderMode = "Inset",
+		BorderSizePixel = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = rainbowCheckboxOutline
+	})
+	local rainbowCheckboxButton = utility.new("TextButton", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Text = "",
+		Parent = rainbowCheckboxHolder
 	})
 
 	-- Rainbow Speed Slider
@@ -4034,7 +4048,7 @@ function sections:colorpicker(props)
 	local function setRainbow(enabled)
 		colorpicker.rainbowEnabled = enabled
 		if enabled then
-			rainbowButton.TextColor3 = self.library.theme.accent
+			rainbowCheckboxColor.BackgroundColor3 = self.library.theme.accent
 			if colorpicker.rainbowConnection then colorpicker.rainbowConnection:Disconnect() end
 
 			colorpicker.rainbowConnection = rs.Heartbeat:Connect(function()
@@ -4065,7 +4079,7 @@ function sections:colorpicker(props)
 				colorpicker.callback(rainbowColor)
 			end)
 		else
-			rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			rainbowCheckboxColor.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			if colorpicker.rainbowConnection then
 				colorpicker.rainbowConnection:Disconnect()
 				colorpicker.rainbowConnection = nil
@@ -4075,7 +4089,7 @@ function sections:colorpicker(props)
 		end
 	end
 
-	rainbowButton.MouseButton1Click:Connect(function()
+	rainbowCheckboxButton.MouseButton1Click:Connect(function()
 		setRainbow(not colorpicker.rainbowEnabled)
 	end)
 
@@ -4305,7 +4319,6 @@ function sections:colorpicker(props)
 	return colorpicker
 end
 
-
 --
 function colorpickers:set(color)
 	if color then
@@ -4322,13 +4335,13 @@ function colorpickers:set(color)
 				colorpicker.rainbowConnection:Disconnect()
 				colorpicker.rainbowConnection = nil
 			end
-			-- Find the rainbow button associated with this colorpicker and update its color
-			local rainbowButton
+			-- Find the rainbow checkbox associated with this colorpicker and update its color
+			local rainbowCheckboxColor
 			if colorpicker.cpholder then
-				rainbowButton = colorpicker.cpholder:FindFirstChild("RainbowButton", true)
+				rainbowCheckboxColor = colorpicker.cpholder:FindFirstChild("RainbowCheckboxColor", true)
 			end
-			if rainbowButton then
-				rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			if rainbowCheckboxColor then
+				rainbowCheckboxColor.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			end
 		end
 
@@ -4363,7 +4376,6 @@ function colorpickers:set(color)
 		colorpicker.callback(colorpicker.current)
 	end
 end
-
 
 --
 function sections:configloader(props)
