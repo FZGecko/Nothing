@@ -3642,7 +3642,7 @@ function sections:colorpicker(props)
 			BorderColor3 = Color3.fromRGB(12, 12, 12),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
-			Size = UDim2.new(1,0,0,230),
+			Size = UDim2.new(1,0,0,255), -- Increased height for slider
 			Position = UDim2.new(0,0,1,5),
 			Visible = false,
 			ZIndex = 5,
@@ -3939,25 +3939,6 @@ function sections:colorpicker(props)
 		--
 		return {textbox_holder,tbox,outline5}
 	end
-
-	local rainbowToggleFrame = utility.new(
-		"Frame",
-		{
-			BackgroundTransparency = 1,
-			Size = UDim2.new(0, 62, 0, 20),
-			Position = UDim2.new(1, -5, 0, 200),
-			AnchorPoint = Vector2.new(1, 0),
-			ZIndex = 5,
-			Parent = outline2
-		}
-	)
-	utility.new(
-		"UIListLayout",
-		{
-			FillDirection = "Horizontal",
-			Parent = rainbowToggleFrame
-		}
-	)
 	--
 	local red = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
 	local green = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
@@ -3966,8 +3947,8 @@ function sections:colorpicker(props)
 	local blue = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
 	blue[1].AnchorPoint = Vector2.new(1,0)
 	blue[1].Position = UDim2.new(1,-5,0,175)
-	-- Adjust hex box to make space for the rainbow toggle
-	local hex = textbox(outline2,UDim2.new(1, -77, 0, 20),UDim2.new(0, 5, 0, 200))
+	-- Shrink hex box to make space for the rainbow checkbox
+	local hex = textbox(outline2,UDim2.new(1, -40, 0, 20),UDim2.new(0, 5, 0, 200))
 	hex[2].Size = UDim2.new(1,-12,1,0)
 	hex[2].TextXAlignment = "Left"
 	-- // colorpicker tbl
@@ -3989,54 +3970,138 @@ function sections:colorpicker(props)
 		["blue"] = blue[2],
 		["hex"] = hex[2],
 		["callback"] = callback,
+		["rainbowSpeed"] = 5, -- Default speed (1-10)
 		["rainbowEnabled"] = false,
-		["rainbowConnection"] = nil
+		["rainbowConnection"] = nil,
+		["rainbowSliding"] = false
 	}
 	--
-	-- Create Rainbow Toggle Button
-	local rainbowButton = utility.new("TextButton", {
-		Name = "RainbowToggle",
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-		BorderColor3 = Color3.fromRGB(56, 56, 56),
+	-- Rainbow Checkbox
+	local rainbowCheckboxHolder = utility.new("Frame", {
+		AnchorPoint = Vector2.new(1, 0),
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 20, 0, 20),
+		Position = UDim2.new(1, -5, 0, 200),
+		Parent = outline2
+	})
+	local rainbowCheckboxOutline = utility.new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+		BorderColor3 = Color3.fromRGB(12, 12, 12),
+		BorderMode = "Inset",
 		BorderSizePixel = 1,
-		Text = "Rainbow",
-		Font = self.library.font,
-		TextSize = self.library.textsize,
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		Parent = rainbowToggleFrame
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = rainbowCheckboxHolder
+	})
+	local rainbowCheckboxColor = utility.new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+		BorderColor3 = Color3.fromRGB(56, 56, 56),
+		BorderMode = "Inset",
+		BorderSizePixel = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = rainbowCheckboxOutline
+	})
+	local rainbowCheckboxButton = utility.new("TextButton", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Text = "",
+		Parent = rainbowCheckboxHolder
 	})
 
+	-- Rainbow Speed Slider
+	local rainbowSliderHolder = utility.new("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -10, 0, 12),
+		Position = UDim2.new(0, 5, 0, 225),
+		Parent = outline2
+	})
+	local rainbowSliderOutline = utility.new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+		BorderColor3 = Color3.fromRGB(12, 12, 12),
+		BorderMode = "Inset",
+		BorderSizePixel = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = rainbowSliderHolder
+	})
+	local rainbowSliderOutline2 = utility.new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+		BorderColor3 = Color3.fromRGB(56, 56, 56),
+		BorderMode = "Inset",
+		BorderSizePixel = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = rainbowSliderOutline
+	})
+	local rainbowSliderFill = utility.new("Frame", {
+		BackgroundColor3 = self.library.theme.accent,
+		BorderSizePixel = 0,
+		Size = UDim2.new(0.5, 0, 1, 0), -- Default speed 5/10 = 0.5
+		ZIndex = 2,
+		Parent = rainbowSliderOutline
+	})
+	local rainbowSliderButton = utility.new("TextButton", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Text = "",
+		Parent = rainbowSliderHolder
+	})
+	
 	local function setRainbow(enabled)
 		colorpicker.rainbowEnabled = enabled
 		if enabled then
-			rainbowButton.TextColor3 = self.library.theme.accent
+			rainbowCheckboxColor.BackgroundColor3 = self.library.theme.accent
 			if colorpicker.rainbowConnection then colorpicker.rainbowConnection:Disconnect() end
 
-			colorpicker.rainbowConnection = RunService.Heartbeat:Connect(function()
-				local hue = (tick() % 5) / 5
+			colorpicker.rainbowConnection = rs.Heartbeat:Connect(function()
+				local speed = colorpicker.rainbowSpeed
+				local cycleTime = 10.1 - speed -- Map speed 1-10 to cycle time 10-0.1
+				local hue = (tick() % cycleTime) / cycleTime
 				local rainbowColor = Color3.fromHSV(hue, 1, 1)
+				
+				-- Update internal state without triggering callbacks yet
 				colorpicker.current = rainbowColor
+				local h,s,v = rainbowColor:ToHSV()
+				colorpicker.hsv = {h,s,v}
+
+				-- Update UI elements
 				colorpicker.cpcolor.BackgroundColor3 = rainbowColor
+				colorpicker.outline3.BackgroundColor3 = Color3.fromHSV(h,1,1)
+				colorpicker.huecursor_inline.BackgroundColor3 = Color3.fromHSV(h,1,1)
+				colorpicker.huecursor.Position = UDim2.new(0.5,0,h,0)
+				colorpicker.cpcursor.Position = UDim2.new(s,0,1-v,0)
+
+				-- Update text boxes
+				colorpicker.red.PlaceholderText = "R: "..tostring(math.floor(rainbowColor.R*255))
+				colorpicker.green.PlaceholderText = "G: "..tostring(math.floor(rainbowColor.G*255))
+				colorpicker.blue.PlaceholderText = "B: "..tostring(math.floor(rainbowColor.B*255))
+				colorpicker.hex.PlaceholderText = "Hex: "..utility.to_hex(rainbowColor)
+
+				-- Finally, call the external callback
 				colorpicker.callback(rainbowColor)
 			end)
 		else
-			rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			rainbowCheckboxColor.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			if colorpicker.rainbowConnection then
 				colorpicker.rainbowConnection:Disconnect()
 				colorpicker.rainbowConnection = nil
 			end
-			-- Restore to the last static color
-			local staticColor = Color3.fromHSV(unpack(colorpicker.hsv))
-			colorpicker.current = staticColor
-			colorpicker.cpcolor.BackgroundColor3 = staticColor
-			colorpicker.callback(staticColor)
+			-- Restore to the last static color by calling the main set function
+			colorpicker:set(Color3.fromHSV(unpack(colorpicker.hsv)))
 		end
 	end
 
-	rainbowButton.MouseButton1Click:Connect(function()
+	rainbowCheckboxButton.MouseButton1Click:Connect(function()
 		setRainbow(not colorpicker.rainbowEnabled)
 	end)
+
+	local function updateRainbowSpeed()
+		local size = math.clamp(plr:GetMouse().X - rainbowSliderOutline.AbsolutePosition.X, 0, rainbowSliderOutline.AbsoluteSize.X)
+		local result = (10 - 1) / rainbowSliderOutline.AbsoluteSize.X * size + 1 -- Map to 1-10 range
+		colorpicker.rainbowSpeed = utility.round(result, 1)
+		rainbowSliderFill:TweenSize(UDim2.new(size / rainbowSliderOutline.AbsoluteSize.X, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+	end
+
+	rainbowSliderButton.MouseButton1Down:Connect(function() colorpicker.rainbowSliding = true; updateRainbowSpeed() end)
+	uis.InputChanged:Connect(function() if colorpicker.rainbowSliding then updateRainbowSpeed() end end)
+	uis.InputEnded:Connect(function(input) if input.UserInputType.Name == 'MouseButton1' and colorpicker.rainbowSliding then colorpicker.rainbowSliding = false end end)
 
 	table.insert(self.library.colorpickers,colorpicker)
 	--
@@ -4050,8 +4115,8 @@ function sections:colorpicker(props)
 	updateboxes()
 	--
 	local function movehue()
-		local posy = math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
 		if colorpicker.rainbowEnabled then setRainbow(false) end
+		local posy = math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
 		local resy = (1/outline3.AbsoluteSize.Y)*posy
 		outline3.BackgroundColor3 = Color3.fromHSV(resy,1,1)
 		huecursor_inline.BackgroundColor3 = Color3.fromHSV(resy,1,1)
@@ -4064,8 +4129,8 @@ function sections:colorpicker(props)
 	end
 	--
 	local function movecp()
-		local posx,posy = math.clamp(plr:GetMouse().X-outline3.AbsolutePosition.X,0,outline3.AbsoluteSize.X),math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
 		if colorpicker.rainbowEnabled then setRainbow(false) end
+		local posx,posy = math.clamp(plr:GetMouse().X-outline3.AbsolutePosition.X,0,outline3.AbsoluteSize.X),math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
 		local resx,resy = (1/outline3.AbsoluteSize.X)*posx,(1/outline3.AbsoluteSize.Y)*posy
 		colorpicker.hsv[2] = resx
 		colorpicker.hsv[3] = 1-resy
@@ -4117,6 +4182,7 @@ function sections:colorpicker(props)
 	end)
 	--
 	red[2].FocusLost:Connect(function()
+		if colorpicker.rainbowEnabled then setRainbow(false) end
 		local saved = red[2].Text
 		local num = tonumber(saved)
 		if num then
@@ -4142,6 +4208,7 @@ function sections:colorpicker(props)
 	end)
 	--
 	green[2].FocusLost:Connect(function()
+		if colorpicker.rainbowEnabled then setRainbow(false) end
 		local saved = green[2].Text
 		local num = tonumber(saved)
 		if num then
@@ -4167,6 +4234,7 @@ function sections:colorpicker(props)
 	end)
 	--
 	blue[2].FocusLost:Connect(function()
+		if colorpicker.rainbowEnabled then setRainbow(false) end
 		local saved = blue[2].Text
 		local num = tonumber(saved)
 		if num then
@@ -4192,11 +4260,11 @@ function sections:colorpicker(props)
 	end)
 	--
 	hex[2].FocusLost:Connect(function()
+		if colorpicker.rainbowEnabled then setRainbow(false) end
 		local saved = hex[2].Text
 		if #saved >= 6 and #saved <= 7 then
 			local e,s = pcall(function()
 				utility.from_hex(saved)
-				if colorpicker.rainbowEnabled then setRainbow(false) end
 			end)
 			if e == true then
 				local hexcolor = utility.from_hex(saved)
@@ -4236,6 +4304,7 @@ function sections:colorpicker(props)
 	setmetatable(colorpicker, colorpickers)
 	return colorpicker
 end
+
 --
 function colorpickers:set(color)
 	if color then
@@ -4252,13 +4321,13 @@ function colorpickers:set(color)
 				colorpicker.rainbowConnection:Disconnect()
 				colorpicker.rainbowConnection = nil
 			end
-			-- Find the rainbow button associated with this colorpicker and update its text color
-			local rainbowButton
+			-- Find the rainbow checkbox associated with this colorpicker and update its color
+			local rainbowCheckboxColor
 			if colorpicker.cpholder then
-				rainbowButton = colorpicker.cpholder:FindFirstChild("RainbowToggle", true) or colorpicker.cpholder.Parent:FindFirstChild("RainbowToggle", true)
+				rainbowCheckboxColor = colorpicker.cpholder:FindFirstChild("RainbowCheckboxColor", true)
 			end
-			if rainbowButton then
-				rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			if rainbowCheckboxColor then
+				rainbowCheckboxColor.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			end
 		end
 
@@ -4293,6 +4362,7 @@ function colorpickers:set(color)
 		colorpicker.callback(colorpicker.current)
 	end
 end
+
 --
 function sections:configloader(props)
 	-- // properties
