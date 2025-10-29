@@ -4157,12 +4157,15 @@ function sections:colorpicker(props)
 		cpholder.Visible = colorpicker.open
 
 		if colorpicker.open then
-			-- Re-parent to main screen to draw over everything
+			-- Re-parent to main screen to draw over everything, using absolute size and position
+			local absoluteSize = colorpickerholder.AbsoluteSize
 			cpholder.Parent = self.library.screen
+			cpholder.Size = UDim2.fromOffset(absoluteSize.X, 255)
 			cpholder.Position = UDim2.fromOffset(colorpickerholder.AbsolutePosition.X, colorpickerholder.AbsolutePosition.Y + colorpickerholder.AbsoluteSize.Y + 5)
 		else
-			-- Parent back to original holder
+			-- Parent back to original holder and restore relative properties
 			cpholder.Parent = colorpickerholder
+			cpholder.Size = UDim2.new(1,0,0,255)
 			cpholder.Position = UDim2.new(0,0,1,5)
 		end
 	end)
