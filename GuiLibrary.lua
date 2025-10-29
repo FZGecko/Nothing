@@ -74,7 +74,7 @@ utility.dragify = function(ins,touse)
 	--
 	local function update(input)
 		local delta = input.Position - dragStart
-		touse:TweenPosition(UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.1,true)
+		touse.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 	--
 	ins.InputBegan:Connect(function(input)
@@ -3939,6 +3939,25 @@ function sections:colorpicker(props)
 		--
 		return {textbox_holder,tbox,outline5}
 	end
+
+	local rainbowToggleFrame = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(0, 62, 0, 20),
+			Position = UDim2.new(1, -5, 0, 200),
+			AnchorPoint = Vector2.new(1, 0),
+			ZIndex = 5,
+			Parent = outline2
+		}
+	)
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Horizontal",
+			Parent = rainbowToggleFrame
+		}
+	)
 	--
 	local red = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
 	local green = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
@@ -3947,7 +3966,8 @@ function sections:colorpicker(props)
 	local blue = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
 	blue[1].AnchorPoint = Vector2.new(1,0)
 	blue[1].Position = UDim2.new(1,-5,0,175)
-	local hex = textbox(outline2,UDim2.new(1,-10,0,20),UDim2.new(0,5,0,200))
+	-- Adjust hex box to make space for the rainbow toggle
+	local hex = textbox(outline2,UDim2.new(1, -77, 0, 20),UDim2.new(0, 5, 0, 200))
 	hex[2].Size = UDim2.new(1,-12,1,0)
 	hex[2].TextXAlignment = "Left"
 	-- // colorpicker tbl
@@ -3968,9 +3988,56 @@ function sections:colorpicker(props)
 		["green"] = green[2],
 		["blue"] = blue[2],
 		["hex"] = hex[2],
-		["callback"] = callback
+		["callback"] = callback,
+		["rainbowEnabled"] = false,
+		["rainbowConnection"] = nil
 	}
 	--
+	-- Create Rainbow Toggle Button
+	local rainbowButton = utility.new("TextButton", {
+		Name = "RainbowToggle",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+		BorderColor3 = Color3.fromRGB(56, 56, 56),
+		BorderSizePixel = 1,
+		Text = "Rainbow",
+		Font = self.library.font,
+		TextSize = self.library.textsize,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Parent = rainbowToggleFrame
+	})
+
+	local function setRainbow(enabled)
+		colorpicker.rainbowEnabled = enabled
+		if enabled then
+			rainbowButton.TextColor3 = self.library.theme.accent
+			if colorpicker.rainbowConnection then colorpicker.rainbowConnection:Disconnect() end
+
+			colorpicker.rainbowConnection = RunService.Heartbeat:Connect(function()
+				local hue = (tick() % 5) / 5
+				local rainbowColor = Color3.fromHSV(hue, 1, 1)
+				colorpicker.current = rainbowColor
+				colorpicker.cpcolor.BackgroundColor3 = rainbowColor
+				colorpicker.callback(rainbowColor)
+			end)
+		else
+			rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			if colorpicker.rainbowConnection then
+				colorpicker.rainbowConnection:Disconnect()
+				colorpicker.rainbowConnection = nil
+			end
+			-- Restore to the last static color
+			local staticColor = Color3.fromHSV(unpack(colorpicker.hsv))
+			colorpicker.current = staticColor
+			colorpicker.cpcolor.BackgroundColor3 = staticColor
+			colorpicker.callback(staticColor)
+		end
+	end
+
+	rainbowButton.MouseButton1Click:Connect(function()
+		setRainbow(not colorpicker.rainbowEnabled)
+	end)
+
 	table.insert(self.library.colorpickers,colorpicker)
 	--
 	local function updateboxes()
@@ -3984,6 +4051,7 @@ function sections:colorpicker(props)
 	--
 	local function movehue()
 		local posy = math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
+		if colorpicker.rainbowEnabled then setRainbow(false) end
 		local resy = (1/outline3.AbsoluteSize.Y)*posy
 		outline3.BackgroundColor3 = Color3.fromHSV(resy,1,1)
 		huecursor_inline.BackgroundColor3 = Color3.fromHSV(resy,1,1)
@@ -3997,6 +4065,7 @@ function sections:colorpicker(props)
 	--
 	local function movecp()
 		local posx,posy = math.clamp(plr:GetMouse().X-outline3.AbsolutePosition.X,0,outline3.AbsoluteSize.X),math.clamp(plr:GetMouse().Y-outline3.AbsolutePosition.Y,0,outline3.AbsoluteSize.Y)
+		if colorpicker.rainbowEnabled then setRainbow(false) end
 		local resx,resy = (1/outline3.AbsoluteSize.X)*posx,(1/outline3.AbsoluteSize.Y)*posy
 		colorpicker.hsv[2] = resx
 		colorpicker.hsv[3] = 1-resy
@@ -4127,6 +4196,7 @@ function sections:colorpicker(props)
 		if #saved >= 6 and #saved <= 7 then
 			local e,s = pcall(function()
 				utility.from_hex(saved)
+				if colorpicker.rainbowEnabled then setRainbow(false) end
 			end)
 			if e == true then
 				local hexcolor = utility.from_hex(saved)
@@ -4174,6 +4244,24 @@ function colorpickers:set(color)
 		end
 		local colorpicker = self
 		local h,s,v = color:ToHSV()
+
+		-- When a color is set programmatically, disable rainbow mode.
+		if colorpicker.rainbowEnabled then
+			colorpicker.rainbowEnabled = false
+			if colorpicker.rainbowConnection then
+				colorpicker.rainbowConnection:Disconnect()
+				colorpicker.rainbowConnection = nil
+			end
+			-- Find the rainbow button associated with this colorpicker and update its text color
+			local rainbowButton
+			if colorpicker.cpholder then
+				rainbowButton = colorpicker.cpholder:FindFirstChild("RainbowToggle", true) or colorpicker.cpholder.Parent:FindFirstChild("RainbowToggle", true)
+			end
+			if rainbowButton then
+				rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			end
+		end
+
 		--
 		local function updateboxes()
 			colorpicker.red.PlaceholderText = "R: "..tostring(math.floor(colorpicker.current.R*255))
