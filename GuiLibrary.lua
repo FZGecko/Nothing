@@ -3947,8 +3947,8 @@ function sections:colorpicker(props)
 	local blue = textbox(outline2,UDim2.new(0,62,0,20),UDim2.new(0,5,0,175))
 	blue[1].AnchorPoint = Vector2.new(1,0)
 	blue[1].Position = UDim2.new(1,-5,0,175)
-	-- Shrink hex box to make space for the rainbow checkbox
-	local hex = textbox(outline2,UDim2.new(1, -40, 0, 20),UDim2.new(0, 5, 0, 200))
+	-- Shrink hex box to make space for the rainbow button
+	local hex = textbox(outline2,UDim2.new(1, -75, 0, 20),UDim2.new(0, 5, 0, 200))
 	hex[2].Size = UDim2.new(1,-12,1,0)
 	hex[2].TextXAlignment = "Left"
 	-- // colorpicker tbl
@@ -3976,12 +3976,14 @@ function sections:colorpicker(props)
 		["rainbowSliding"] = false
 	}
 	--
-	-- Rainbow Checkbox
-	local rainbowCheckboxHolder = utility.new("Frame", {
+	-- Rainbow Button
+	local rainbowButton = utility.new("TextButton", {
+		Name = "RainbowButton",
 		AnchorPoint = Vector2.new(1, 0),
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 20, 0, 20),
 		Position = UDim2.new(1, -5, 0, 200),
+		ZIndex = 6, -- ZINDEX FIX
 		Parent = outline2
 	})
 	local rainbowCheckboxOutline = utility.new("Frame", {
