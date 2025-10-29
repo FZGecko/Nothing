@@ -3983,6 +3983,13 @@ function sections:colorpicker(props)
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 20, 0, 20),
 		Position = UDim2.new(1, -5, 0, 200),
+		BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+		BorderColor3 = Color3.fromRGB(56, 56, 56),
+		BorderSizePixel = 1,
+		Text = "Rainbow",
+		Font = self.library.font,
+		TextSize = self.library.textsize,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
 		ZIndex = 6, -- ZINDEX FIX
 		Parent = outline2
 	})
@@ -4050,6 +4057,7 @@ function sections:colorpicker(props)
 	local function setRainbow(enabled)
 		colorpicker.rainbowEnabled = enabled
 		if enabled then
+			rainbowButton.TextColor3 = self.library.theme.accent
 			rainbowCheckboxColor.BackgroundColor3 = self.library.theme.accent
 			if colorpicker.rainbowConnection then colorpicker.rainbowConnection:Disconnect() end
 
@@ -4081,6 +4089,7 @@ function sections:colorpicker(props)
 				colorpicker.callback(rainbowColor)
 			end)
 		else
+			rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 			rainbowCheckboxColor.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			if colorpicker.rainbowConnection then
 				colorpicker.rainbowConnection:Disconnect()
@@ -4091,6 +4100,7 @@ function sections:colorpicker(props)
 		end
 	end
 
+	rainbowButton.MouseButton1Click:Connect(function()
 	rainbowCheckboxButton.MouseButton1Click:Connect(function()
 		setRainbow(not colorpicker.rainbowEnabled)
 	end)
@@ -4321,6 +4331,7 @@ function sections:colorpicker(props)
 	return colorpicker
 end
 
+
 --
 function colorpickers:set(color)
 	if color then
@@ -4337,11 +4348,16 @@ function colorpickers:set(color)
 				colorpicker.rainbowConnection:Disconnect()
 				colorpicker.rainbowConnection = nil
 			end
+			-- Find the rainbow button associated with this colorpicker and update its color
+			local rainbowButton
 			-- Find the rainbow checkbox associated with this colorpicker and update its color
 			local rainbowCheckboxColor
 			if colorpicker.cpholder then
+				rainbowButton = colorpicker.cpholder:FindFirstChild("RainbowButton", true)
 				rainbowCheckboxColor = colorpicker.cpholder:FindFirstChild("RainbowCheckboxColor", true)
 			end
+			if rainbowButton then
+				rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 			if rainbowCheckboxColor then
 				rainbowCheckboxColor.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			end
@@ -4378,6 +4394,7 @@ function colorpickers:set(color)
 		colorpicker.callback(colorpicker.current)
 	end
 end
+
 
 --
 function sections:configloader(props)
