@@ -3980,7 +3980,7 @@ function sections:colorpicker(props)
 	local rainbowButton = utility.new("TextButton", {
 		Name = "RainbowButton",
 		AnchorPoint = Vector2.new(1, 0),
-		Size = UDim2.new(0, 62, 0, 20),
+		Size = UDim2.new(0, 60, 0, 20),
 		Position = UDim2.new(1, -5, 0, 200),
 		BackgroundColor3 = Color3.fromRGB(30, 30, 30),
 		BorderColor3 = Color3.fromRGB(56, 56, 56),
