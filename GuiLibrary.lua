@@ -4141,12 +4141,6 @@ function sections:colorpicker(props)
 		cpcursor:TweenPosition(UDim2.new(resx,0,resy,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.15,true)
 	end
 	--
-	button.MouseButton1Down:Connect(function()
-		self.library:closewindows(colorpicker)
-		cpholder.Visible = not colorpicker.open
-		colorpicker.open = not colorpicker.open
-	end)
-	--
 	huebutton.MouseButton1Down:Connect(function()
 		colorpicker.hue = true
 		movehue()
@@ -4155,6 +4149,22 @@ function sections:colorpicker(props)
 	cpimage.MouseButton1Down:Connect(function()
 		colorpicker.cp = true
 		movecp()
+	end)
+	--
+	button.MouseButton1Down:Connect(function()
+		self.library:closewindows(colorpicker)
+		colorpicker.open = not colorpicker.open
+		cpholder.Visible = colorpicker.open
+
+		if colorpicker.open then
+			-- Re-parent to main screen to draw over everything
+			cpholder.Parent = self.library.screen
+			cpholder.Position = UDim2.fromOffset(colorpickerholder.AbsolutePosition.X, colorpickerholder.AbsolutePosition.Y + colorpickerholder.AbsoluteSize.Y + 5)
+		else
+			-- Parent back to original holder
+			cpholder.Parent = colorpickerholder
+			cpholder.Position = UDim2.new(0,0,1,5)
+		end
 	end)
 	--
 	uis.InputChanged:Connect(function()
