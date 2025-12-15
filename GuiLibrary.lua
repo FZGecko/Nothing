@@ -52,6 +52,7 @@ loaderguis.__index = loaderguis
 huds.__index = huds
 watermarks.__index = watermarks
 loaders.__index = loaders
+loaderguis.__index = loaderguis
 -- // functions
 library.theme = {
 	accent = Color3.fromRGB(225, 58, 81) -- Default accent color
