@@ -18,7 +18,7 @@ local configloaders = {}
 local loaderguis = {}
 local huds = {}
 local watermarks = {}
-local loade = {}
+local loaders = {}
 --
 local utility = {}
 --
@@ -51,7 +51,6 @@ configloaders.__index = configloaders
 loaderguis.__index = loaderguis
 huds.__index = huds
 watermarks.__index = watermarks
-loaders.__index = loaders
 loaderguis.__index = loaderguis
 -- // functions
 library.theme = {
