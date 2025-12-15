@@ -72,7 +72,7 @@ utility.dragify = function(ins,touse)
 	local dragInput
 	local dragStart
 	local startPos
-	--
+	local connections = {}
 	local function update(input)
 		local delta = input.Position - dragStart
 		touse.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
@@ -84,25 +84,29 @@ utility.dragify = function(ins,touse)
 			dragStart = input.Position
 			startPos = touse.Position
 
-			input.Changed:Connect(function()
+			local changedConn = input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					dragging = false
 				end
 			end)
+			table.insert(connections, changedConn)
 		end
 	end)
-	--
-	ins.InputChanged:Connect(function(input)
+	
+	local inputChangedConn1 = ins.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			dragInput = input
 		end
 	end)
-	--
-	uis.InputChanged:Connect(function(input)
+	table.insert(connections, inputChangedConn1)
+
+	local inputChangedConn2 = uis.InputChanged:Connect(function(input)
 		if input == dragInput and dragging then
 			update(input)
 		end
 	end)
+	table.insert(connections, inputChangedConn2)
+	return connections
 end
 --
 utility.round = function(n,d)
@@ -353,7 +357,7 @@ function library:new(props)
 		["theme"] = self.theme, -- Reference the library's theme
 		["themeitems"] = {
 			["accent"] = {
-				["BackgroundColor3"] = {},
+				["BackgroundColor3"] = {}, 
 				["BorderColor3"] = {},
 				["TextColor3"] = {}
 			}
@@ -361,12 +365,13 @@ function library:new(props)
 	}
 	--
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
-	--
+	window.connections = {}
+
 	local toggled = true
 	local cooldown = false
 	local saved = UDim2.new(0,0,0,0)
 	--
-	uis.InputBegan:Connect(function(Input)
+	local toggleConnection = uis.InputBegan:Connect(function(Input)
 		-- Check if the input matches the stored key, regardless of type (KeyCode or UserInputType)
 		local isMatch = (Input.KeyCode == window.key) or (Input.UserInputType == window.key)
 		if not isMatch then return end
@@ -416,7 +421,12 @@ function library:new(props)
 			end
 		end
 	end)
-	--
+	table.insert(window.connections, toggleConnection)
+
+	local dragConnections = utility.dragify(title,outline)
+	for _, c in ipairs(dragConnections) do
+		table.insert(window.connections, c)
+	end
 	window.labels[#window.labels+1] = titletext
 	-- // metatable indexing + return
 	setmetatable(window, library)
@@ -2066,13 +2076,13 @@ function sections:slider(props)
 		outline.BorderColor3 = self.library.theme.accent
 	end)
 	--
-	uis.InputChanged:Connect(function()
+	local inputChangedConn = uis.InputChanged:Connect(function()
 		if slider.holding then
 			slide()
 		end
 	end)
-	--
-	uis.InputEnded:Connect(function(Input)
+	table.insert(self.library.connections, inputChangedConn)
+	local inputEndedConn = uis.InputEnded:Connect(function(Input)
 		if Input.UserInputType.Name == 'MouseButton1' and slider.holding then
 			slider.holding = false
 			outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
@@ -2082,7 +2092,8 @@ function sections:slider(props)
 			end
 		end
 	end)
-	--
+	table.insert(self.library.connections, inputEndedConn)
+
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
 	--
 	if pointer then
@@ -4158,7 +4169,7 @@ function sections:colorpicker(props)
 		end
 	end)
 	--
-	uis.InputChanged:Connect(function()
+	local inputChangedConn = uis.InputChanged:Connect(function()
 		if colorpicker.cp then
 			movecp()
 		end
@@ -4166,8 +4177,8 @@ function sections:colorpicker(props)
 			movehue()
 		end
 	end)
-	--
-	uis.InputEnded:Connect(function(Input)
+	table.insert(self.library.connections, inputChangedConn)
+	local inputEndedConn = uis.InputEnded:Connect(function(Input)
 		if Input.UserInputType.Name == 'MouseButton1'  then
 			if colorpicker.cp then
 				colorpicker.cp = false
@@ -4177,7 +4188,8 @@ function sections:colorpicker(props)
 			end
 		end
 	end)
-	--
+	table.insert(self.library.connections, inputEndedConn)
+
 	red[2].Focused:Connect(function()
 		red[3].BorderColor3 = self.library.theme.accent
 	end)
@@ -4884,6 +4896,17 @@ function sections:configloader(props)
 	-- // metatable indexing + return
 	setmetatable(configloader, configloaders)
 	return configloader 
+end
+
+function library:destroy()
+	-- Disconnect all connections created by this window and its children
+	for _, connection in ipairs(self.connections) do
+		connection:Disconnect()
+	end
+	self.connections = {}
+
+	-- Destroy the main ScreenGui, which will cascade to all children
+	self.screen:Destroy()
 end
 
 function library:hud(props)
