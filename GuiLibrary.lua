@@ -1,3 +1,4 @@
+-- Loadstring: https://raw.githubusercontent.com/FZGecko/Nothing/refs/heads/main/GuiLibrary.lua
 -- // variables
 local library = {}
 local pages = {}
@@ -17,7 +18,7 @@ local configloaders = {}
 local loaderguis = {}
 local huds = {}
 local watermarks = {}
-local loaders = {}
+local loade = {}
 --
 local utility = {}
 --
@@ -366,52 +367,52 @@ function library:new(props)
 	local saved = UDim2.new(0,0,0,0)
 	--
 	uis.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.Keyboard then
-			if Input.KeyCode == window.key then
-				if cooldown == false then
-					if toggled then
-						cooldown = true
-						toggled = not toggled
-						saved = outline.Position
-						local xx,yy = 0,0
-						local xxx,yyy = 0,0
-						--
-						if (outline.AbsolutePosition.X+(outline.AbsoluteSize.X/2)) < (cam.ViewportSize.X/2) then
-							xx = -3
-						else
-							xx = 3
-						end
-						--
-						if window.y then
-							if (outline.AbsolutePosition.Y+(outline.AbsoluteSize.Y/2)) < (cam.ViewportSize.Y/2) then
-								yy = -3
-							else
-								yy = 3
-							end
-						else
-							yy = saved.Y.Scale
-							yyy = saved.Y.Offset
-						end
-						--
-						if window.x == false and window.y == false then
-							screen.Enabled = false
-						else
-							ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(xx,xxx,yy,yyy)}):Play()
-						end
-						wait(0.5)
-						cooldown = false
-					else
-						cooldown = true
-						toggled = not toggled
-						if window.x == false and window.y == false then
-							screen.Enabled = true
-						else
-							ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Position = saved}):Play()
-						end
-						wait(0.5)
-						cooldown = false
-					end
+		-- Check if the input matches the stored key, regardless of type (KeyCode or UserInputType)
+		local isMatch = (Input.KeyCode == window.key) or (Input.UserInputType == window.key)
+		if not isMatch then return end
+
+		if cooldown == false then
+			if toggled then
+				cooldown = true
+				toggled = not toggled
+				saved = outline.Position
+				local xx,yy = 0,0
+				local xxx,yyy = 0,0
+				--
+				if (outline.AbsolutePosition.X+(outline.AbsoluteSize.X/2)) < (cam.ViewportSize.X/2) then
+					xx = -3
+				else
+					xx = 3
 				end
+				--
+				if window.y then
+					if (outline.AbsolutePosition.Y+(outline.AbsoluteSize.Y/2)) < (cam.ViewportSize.Y/2) then
+						yy = -3
+					else
+						yy = 3
+					end
+				else
+					yy = saved.Y.Scale
+					yyy = saved.Y.Offset
+				end
+				--
+				if window.x == false and window.y == false then
+					screen.Enabled = false
+				else
+					ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(xx,xxx,yy,yyy)}):Play()
+				end
+				wait(0.5)
+				cooldown = false
+			else
+				cooldown = true
+				toggled = not toggled
+				if window.x == false and window.y == false then
+					screen.Enabled = true
+				else
+					ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Position = saved}):Play()
+				end
+				wait(0.5)
+				cooldown = false
 			end
 		end
 	end)
@@ -551,7 +552,7 @@ function watermarks:updateside(side)
 end
 --
 function library:loaderGui(props)
-	local name = props.name or "Loading ProjectDelta..."
+	local name = props.name or "Loading Gui..."
 	local color = props.color or self.theme.accent
 	local loaderGui = {}
 
