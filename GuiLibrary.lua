@@ -19,6 +19,40 @@ local loaderguis = {}
 local huds = {}
 local watermarks = {}
 local loaders = {}
+local activeRainbows = {} -- Centralized table for rainbow pickers
+
+-- Centralized Heartbeat Loop for Performance
+rs.Heartbeat:Connect(function()
+	for cp, _ in pairs(activeRainbows) do
+		if cp.rainbowEnabled then
+			local speed = cp.rainbowSpeed
+			local cycleTime = 10.1 - speed -- Map speed 1-10 to cycle time
+			local hue = (tick() % cycleTime) / cycleTime
+			local rainbowColor = Color3.fromHSV(hue, 1, 1)
+			
+			-- Update internal state
+			cp.current = rainbowColor
+			local h,s,v = rainbowColor:ToHSV()
+			cp.hsv = {h,s,v}
+
+			-- Update UI elements
+			cp.cpcolor.BackgroundColor3 = rainbowColor
+			cp.outline3.BackgroundColor3 = Color3.fromHSV(h,1,1)
+			cp.huecursor_inline.BackgroundColor3 = Color3.fromHSV(h,1,1)
+			cp.huecursor.Position = UDim2.new(0.5,0,h,0)
+			cp.cpcursor.Position = UDim2.new(s,0,1-v,0)
+
+			-- Update text boxes (Visual only, no callback trigger to prevent recursion)
+			cp.red.PlaceholderText = "R: "..tostring(math.floor(rainbowColor.R*255))
+			cp.green.PlaceholderText = "G: "..tostring(math.floor(rainbowColor.G*255))
+			cp.blue.PlaceholderText = "B: "..tostring(math.floor(rainbowColor.B*255))
+			cp.hex.PlaceholderText = "Hex: "..utility.to_hex(rainbowColor)
+
+			-- Trigger callback
+			cp.callback(rainbowColor)
+		end
+	end
+end)
 --
 local utility = {}
 --
@@ -4009,6 +4043,7 @@ function sections:colorpicker(props)
 	local rainbowSliderHolder = utility.new("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, -10, 0, 12),
+		Size = UDim2.new(1, -45, 0, 12), -- Reduced width to fit TextBox
 		Position = UDim2.new(0, 5, 0, 225),
 		ZIndex = 6, -- ZINDEX FIX
 		Parent = outline2
@@ -4041,6 +4076,20 @@ function sections:colorpicker(props)
 		Size = UDim2.new(1, 0, 1, 0),
 		Text = "",
 		Parent = rainbowSliderHolder
+	})
+
+	-- Rainbow Speed Text Box
+	local rainbowSpeedBox = utility.new("TextBox", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 30, 0, 12),
+		Position = UDim2.new(1, -35, 0, 225),
+		Text = tostring(colorpicker.rainbowSpeed),
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		TextSize = self.library.textsize,
+		Font = self.library.font,
+		PlaceholderText = "Spd",
+		ZIndex = 6,
+		Parent = outline2
 	})
 	
 	local function setRainbow(enabled)
@@ -4076,12 +4125,14 @@ function sections:colorpicker(props)
 				-- Finally, call the external callback
 				colorpicker.callback(rainbowColor)
 			end)
+			activeRainbows[colorpicker] = true -- Register to centralized loop
 		else
 			rainbowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 			if colorpicker.rainbowConnection then
 				colorpicker.rainbowConnection:Disconnect()
 				colorpicker.rainbowConnection = nil
 			end
+			activeRainbows[colorpicker] = nil -- Unregister
 			-- Restore to the last static color by calling the main set function
 			colorpicker:set(Color3.fromHSV(unpack(colorpicker.hsv)))
 		end
@@ -4095,12 +4146,35 @@ function sections:colorpicker(props)
 		local size = math.clamp(plr:GetMouse().X - rainbowSliderOutline.AbsolutePosition.X, 0, rainbowSliderOutline.AbsoluteSize.X)
 		local result = (10 - 1) / rainbowSliderOutline.AbsoluteSize.X * size + 1 -- Map to 1-10 range
 		colorpicker.rainbowSpeed = utility.round(result, 1)
+		local newSpeed = utility.round(result, 1)
+		colorpicker.rainbowSpeed = newSpeed
+		rainbowSpeedBox.Text = tostring(newSpeed)
 		rainbowSliderFill:TweenSize(UDim2.new(size / rainbowSliderOutline.AbsoluteSize.X, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
 	end
+
+	-- Text Box Logic
+	rainbowSpeedBox.FocusLost:Connect(function()
+		local num = tonumber(rainbowSpeedBox.Text)
+		if num then
+			num = math.clamp(num, 1, 10)
+			colorpicker.rainbowSpeed = num
+			-- Update slider visual
+			local percent = (num - 1) / 9
+			rainbowSliderFill:TweenSize(UDim2.new(percent, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+		end
+		rainbowSpeedBox.Text = tostring(colorpicker.rainbowSpeed)
+	end)
 
 	rainbowSliderButton.MouseButton1Down:Connect(function() colorpicker.rainbowSliding = true; updateRainbowSpeed() end)
 	uis.InputChanged:Connect(function() if colorpicker.rainbowSliding then updateRainbowSpeed() end end)
 	uis.InputEnded:Connect(function(input) if input.UserInputType.Name == 'MouseButton1' and colorpicker.rainbowSliding then colorpicker.rainbowSliding = false end end)
+	
+	-- Proper Input Handling: Add to library connections for cleanup
+	local rbInputChanged = uis.InputChanged:Connect(function() if colorpicker.rainbowSliding then updateRainbowSpeed() end end)
+	local rbInputEnded = uis.InputEnded:Connect(function(input) if input.UserInputType.Name == 'MouseButton1' and colorpicker.rainbowSliding then colorpicker.rainbowSliding = false end end)
+	
+	table.insert(self.library.connections, rbInputChanged)
+	table.insert(self.library.connections, rbInputEnded)
 
 	table.insert(self.library.colorpickers,colorpicker)
 	--
@@ -4335,6 +4409,7 @@ function colorpickers:set(color)
 				colorpicker.rainbowConnection:Disconnect()
 				colorpicker.rainbowConnection = nil
 			end
+			activeRainbows[colorpicker] = nil -- Unregister
 			-- Find the rainbow button associated with this colorpicker and update its color
 			local rainbowButton
 			if colorpicker.cpholder then
