@@ -1775,6 +1775,14 @@ function sections:toggle(props)
 		self:colorpicker(cp)
 	end
 	--
+	if props.keybind then
+		local kb = props.keybind
+		kb.parent = toggleholder
+		kb.flag = "toggle"
+		kb.name = ""
+		self:keybind(kb)
+	end
+	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
 	--
 	if pointer then
@@ -3264,6 +3272,7 @@ function sections:keybind(props)
 	local def = props.def or props.Def or props.default or props.Default or nil
 	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
 	local allowed = props.allowed or props.Allowed or 1
+	local parent = props.parent or self.content
 	--
 	local default = ".."
 	local typeis = nil
@@ -3301,10 +3310,16 @@ function sections:keybind(props)
 		"Frame",
 		{
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,0,17),
-			Parent = self.content
+			Size = UDim2.new(1,0,0,17), -- Default height
+			Parent = parent
 		}
 	)
+	--
+	if props.flag == "toggle" then
+		keybindholder.Size = UDim2.new(1,0,1,0)
+		keybindholder.Position = UDim2.new(0,0,0,0)
+		keybindholder.ZIndex = 3
+	end
 	--
 	local outline = utility.new(
 		"Frame",
@@ -3371,6 +3386,12 @@ function sections:keybind(props)
 		}
 	)
 	--
+	local btnParent = keybindholder
+	if props.flag == "toggle" then
+		-- If embedded in toggle, button should only cover the keybind box, not the whole row
+		btnParent = outline
+	end
+	--
 	local button = utility.new(
 		"TextButton",
 		{
@@ -3383,7 +3404,7 @@ function sections:keybind(props)
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			Font = self.library.font,
-			Parent = keybindholder
+			Parent = btnParent
 		}
 	)
 	--
@@ -3399,6 +3420,7 @@ function sections:keybind(props)
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
+			Visible = (props.flag ~= "toggle"),
 			Parent = keybindholder
 		}
 	)
