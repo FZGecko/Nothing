@@ -21,38 +21,6 @@ local watermarks = {}
 local loaders = {}
 local activeRainbows = {} -- Centralized table for rainbow pickers
 
--- Centralized Heartbeat Loop for Performance
-rs.Heartbeat:Connect(function()
-	for cp, _ in pairs(activeRainbows) do
-		if cp.rainbowEnabled then
-			local speed = cp.rainbowSpeed
-			local cycleTime = 10.1 - speed -- Map speed 1-10 to cycle time
-			local hue = (tick() % cycleTime) / cycleTime
-			local rainbowColor = Color3.fromHSV(hue, 1, 1)
-			
-			-- Update internal state
-			cp.current = rainbowColor
-			local h,s,v = rainbowColor:ToHSV()
-			cp.hsv = {h,s,v}
-
-			-- Update UI elements
-			cp.cpcolor.BackgroundColor3 = rainbowColor
-			cp.outline3.BackgroundColor3 = Color3.fromHSV(h,1,1)
-			cp.huecursor_inline.BackgroundColor3 = Color3.fromHSV(h,1,1)
-			cp.huecursor.Position = UDim2.new(0.5,0,h,0)
-			cp.cpcursor.Position = UDim2.new(s,0,1-v,0)
-
-			-- Update text boxes (Visual only, no callback trigger to prevent recursion)
-			cp.red.PlaceholderText = "R: "..tostring(math.floor(rainbowColor.R*255))
-			cp.green.PlaceholderText = "G: "..tostring(math.floor(rainbowColor.G*255))
-			cp.blue.PlaceholderText = "B: "..tostring(math.floor(rainbowColor.B*255))
-			cp.hex.PlaceholderText = "Hex: "..utility.to_hex(rainbowColor)
-
-			-- Trigger callback
-			cp.callback(rainbowColor)
-		end
-	end
-end)
 --
 local utility = {}
 --
@@ -4042,7 +4010,6 @@ function sections:colorpicker(props)
 	-- Rainbow Speed Slider
 	local rainbowSliderHolder = utility.new("Frame", {
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, -10, 0, 12),
 		Size = UDim2.new(1, -45, 0, 12), -- Reduced width to fit TextBox
 		Position = UDim2.new(0, 5, 0, 225),
 		ZIndex = 6, -- ZINDEX FIX
@@ -4053,6 +4020,7 @@ function sections:colorpicker(props)
 		BorderColor3 = Color3.fromRGB(12, 12, 12),
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
+		ZIndex = 6,
 		Size = UDim2.new(1, 0, 1, 0),
 		Parent = rainbowSliderHolder
 	})
@@ -4061,6 +4029,7 @@ function sections:colorpicker(props)
 		BorderColor3 = Color3.fromRGB(56, 56, 56),
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
+		ZIndex = 6,
 		Size = UDim2.new(1, 0, 1, 0),
 		Parent = rainbowSliderOutline
 	})
@@ -4068,7 +4037,6 @@ function sections:colorpicker(props)
 		BackgroundColor3 = self.library.theme.accent,
 		BorderSizePixel = 0,
 		Size = UDim2.new(0.5, 0, 1, 0), -- Default speed 5/10 = 0.5
-		ZIndex = 2,
 		ZIndex = 7,
 		Parent = rainbowSliderOutline
 	})
@@ -4090,7 +4058,6 @@ function sections:colorpicker(props)
 		TextSize = self.library.textsize,
 		Font = self.library.font,
 		PlaceholderText = "Spd",
-		ZIndex = 6,
 		ZIndex = 7,
 		Parent = outline2
 	})
