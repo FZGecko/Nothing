@@ -42,6 +42,11 @@ rs.Heartbeat:Connect(function()
 			cp.huecursor.Position = UDim2.new(0.5,0,h,0)
 			cp.cpcursor.Position = UDim2.new(s,0,1-v,0)
 
+			-- Update Rainbow Button Text
+			if cp.rainbowButton then
+				cp.rainbowButton.TextColor3 = rainbowColor
+			end
+
 			-- Update text boxes (Visual only, no callback trigger to prevent recursion)
 			cp.red.PlaceholderText = "R: "..tostring(math.floor(rainbowColor.R*255))
 			cp.green.PlaceholderText = "G: "..tostring(math.floor(rainbowColor.G*255))
@@ -4017,6 +4022,7 @@ function sections:colorpicker(props)
 		["hex"] = hex[2],
 		["callback"] = callback,
 		["rainbowSpeed"] = 5, -- Default speed (1-10)
+		["rainbowButton"] = rainbowButton,
 		["rainbowEnabled"] = false,
 		["rainbowConnection"] = nil,
 		["rainbowSliding"] = false
@@ -4042,7 +4048,6 @@ function sections:colorpicker(props)
 	-- Rainbow Speed Slider
 	local rainbowSliderHolder = utility.new("Frame", {
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, -10, 0, 12),
 		Size = UDim2.new(1, -45, 0, 12), -- Reduced width to fit TextBox
 		Position = UDim2.new(0, 5, 0, 225),
 		ZIndex = 6, -- ZINDEX FIX
@@ -4053,6 +4058,7 @@ function sections:colorpicker(props)
 		BorderColor3 = Color3.fromRGB(12, 12, 12),
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
+		ZIndex = 6,
 		Size = UDim2.new(1, 0, 1, 0),
 		Parent = rainbowSliderHolder
 	})
@@ -4061,6 +4067,7 @@ function sections:colorpicker(props)
 		BorderColor3 = Color3.fromRGB(56, 56, 56),
 		BorderMode = "Inset",
 		BorderSizePixel = 1,
+		ZIndex = 6,
 		Size = UDim2.new(1, 0, 1, 0),
 		Parent = rainbowSliderOutline
 	})
@@ -4068,12 +4075,13 @@ function sections:colorpicker(props)
 		BackgroundColor3 = self.library.theme.accent,
 		BorderSizePixel = 0,
 		Size = UDim2.new(0.5, 0, 1, 0), -- Default speed 5/10 = 0.5
-		ZIndex = 2,
+		ZIndex = 6,
 		Parent = rainbowSliderOutline
 	})
 	local rainbowSliderButton = utility.new("TextButton", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 1, 0),
+		ZIndex = 6,
 		Text = "",
 		Parent = rainbowSliderHolder
 	})
