@@ -1767,6 +1767,14 @@ function sections:toggle(props)
 		end
 	end)
 	--
+	if props.colorpicker then
+		local cp = props.colorpicker
+		cp.parent = toggleholder
+		cp.flag = "toggle"
+		cp.name = ""
+		self:colorpicker(cp)
+	end
+	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
 	--
 	if pointer then
@@ -3556,6 +3564,7 @@ function sections:colorpicker(props)
 	local cpname = props.cpname or props.Cpname or props.CPname or props.CPName or props.cPname or props.cpName or props.colorpickername or nil
 	local def = props.def or props.Def or props.default or props.Default or Color3.fromRGB(255,255,255)
 	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+	local parent = props.parent or self.content
 	--
 	local h,s,v = def:ToHSV()
 	-- // variables
@@ -3567,7 +3576,7 @@ function sections:colorpicker(props)
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1,0,0,15),
 			ZIndex = 2,
-			Parent = self.content
+			Parent = parent
 		}
 	)
 	--
@@ -3632,13 +3641,22 @@ function sections:colorpicker(props)
 		}
 	)
 	--
+	local btnSize = UDim2.new(1,0,1,0)
+	local btnPos = UDim2.new(0,0,0,0)
+	local btnAnchor = Vector2.new(0,0)
+	if props.flag == "toggle" then
+		btnSize = UDim2.new(0,30,1,0)
+		btnPos = UDim2.new(1,0,0,0)
+		btnAnchor = Vector2.new(1,0)
+	end
+	--
 	local button = utility.new(
 		"TextButton",
 		{
-			AnchorPoint = Vector2.new(0,0),
+			AnchorPoint = btnAnchor,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0,0,0,0),
+			Size = btnSize,
+			Position = btnPos,
 			Text = "",
 			TextColor3 = Color3.fromRGB(255,255,255),
 			TextSize = self.library.textsize,
@@ -4906,6 +4924,16 @@ function sections:configloader(props)
 		load[2].BorderColor3 = self.library.theme.accent
 		wait(0.05)
 		load[2].BorderColor3 = Color3.fromRGB(12,12,12)
+		if selected then
+			self.library:loadconfig(folder..selected.name..".cfg")
+			load[2].BorderColor3 = self.library.theme.accent
+			wait(0.05)
+			load[2].BorderColor3 = Color3.fromRGB(12,12,12)
+		else
+			if self.library.notify then
+				self.library.notify({Title = "Config Error", Description = "Please select a config first.", Duration = 3})
+			end
+		end
 	end)
 	--
 	delete[3].MouseButton1Down:Connect(function()
@@ -4915,6 +4943,18 @@ function sections:configloader(props)
 		delete[2].BorderColor3 = Color3.fromRGB(12,12,12)
 		wait()
 		refresh()
+		if selected then
+			delfile(folder..selected.name..".cfg")
+			delete[2].BorderColor3 = self.library.theme.accent
+			wait(0.05)
+			delete[2].BorderColor3 = Color3.fromRGB(12,12,12)
+			wait()
+			refresh()
+		else
+			if self.library.notify then
+				self.library.notify({Title = "Config Error", Description = "Please select a config first.", Duration = 3})
+			end
+		end
 	end)
 	--
 	save[3].MouseButton1Down:Connect(function()
@@ -4924,6 +4964,18 @@ function sections:configloader(props)
 		save[2].BorderColor3 = Color3.fromRGB(12,12,12)
 		wait()
 		refresh()
+		if selected then
+			writefile(folder..selected.name..".cfg", self.library:saveconfig())
+			save[2].BorderColor3 = self.library.theme.accent
+			wait(0.05)
+			save[2].BorderColor3 = Color3.fromRGB(12,12,12)
+			wait()
+			refresh()
+		else
+			if self.library.notify then
+				self.library.notify({Title = "Config Error", Description = "Please select a config first.", Duration = 3})
+			end
+		end
 	end)
 	--
 	create[3].MouseButton1Down:Connect(function()
@@ -4933,6 +4985,18 @@ function sections:configloader(props)
 		create[2].BorderColor3 = Color3.fromRGB(12,12,12)
 		wait()
 		refresh()
+		if currentname then
+			writefile(folder..currentname..".cfg", self.library:saveconfig())
+			create[2].BorderColor3 = self.library.theme.accent
+			wait(0.05)
+			create[2].BorderColor3 = Color3.fromRGB(12,12,12)
+			wait()
+			refresh()
+		else
+			if self.library.notify then
+				self.library.notify({Title = "Config Error", Description = "Please enter a valid name (3-15 chars).", Duration = 3})
+			end
+		end
 	end)
 	-- // button tbl
 	configloader = {
