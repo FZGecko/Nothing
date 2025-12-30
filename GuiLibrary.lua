@@ -1793,6 +1793,7 @@ function sections:toggle(props)
 	--
 	self.library.labels[#self.library.labels+1] = title
 	-- // metatable indexing + return
+	callback(def)
 	setmetatable(toggle, toggles)
 	return toggle
 end
@@ -2123,6 +2124,7 @@ function sections:slider(props)
 	self.library.labels[#self.library.labels+1] = title
 	self.library.labels[#self.library.labels+1] = value
 	-- // metatable indexing + return
+	callback(def)
 	setmetatable(slider, sliders)
 	return slider
 end
@@ -2472,6 +2474,7 @@ function sections:dropdown(props)
 	self.library.labels[#self.library.labels+1] = title
 	self.library.labels[#self.library.labels+1] = value
 	-- // metatable indexing + return
+	callback(def)
 	setmetatable(dropdown, dropdowns)
 	return dropdown
 end
@@ -3052,6 +3055,7 @@ function sections:multibox(props)
 	self.library.labels[#self.library.labels+1] = value
 	self.library.labels[#self.library.labels+1] = title
 	-- // metatable indexing + return
+	callback(def)
 	setmetatable(multibox, multiboxs)
 	return multibox
 end
@@ -3256,6 +3260,7 @@ function sections:textbox(props)
 	self.library.labels[#self.library.labels+1] = title
 	self.library.labels[#self.library.labels+1] = tbox
 	-- // metatable indexing + return
+	callback(def)
 	setmetatable(textbox, textboxs)
 	return textbox
 end
@@ -3519,6 +3524,7 @@ function sections:keybind(props)
 	self.library.labels[#self.library.labels+1] = title
 	self.library.labels[#self.library.labels+1] = value
 	-- // metatable indexing + return
+	callback(def)
 	setmetatable(keybind, keybinds)
 	return keybind
 end
@@ -4398,6 +4404,7 @@ function sections:colorpicker(props)
 	self.library.labels[#self.library.labels+1] = blue[2]
 	self.library.labels[#self.library.labels+1] = cptitle
 	-- // metatable indexing + return
+	callback(def)
 	setmetatable(colorpicker, colorpickers)
 	return colorpicker
 end
