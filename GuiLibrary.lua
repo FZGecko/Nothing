@@ -5151,16 +5151,18 @@ function library:hud(props)
 	local title = props.title or "HUD"
 	local draggableBody = props.draggableBody
 	local width = props.width -- Optional fixed width
+	local align = props.alignment or (width and Enum.HorizontalAlignment.Left or Enum.HorizontalAlignment.Center)
+	local txtAlign = (align == Enum.HorizontalAlignment.Left) and Enum.TextXAlignment.Left or Enum.TextXAlignment.Center
 	local hud = {}
 
 	local mainFrame = utility.new("Frame", {
 		Name = "HUD_Frame",
-		AnchorPoint = width and Vector2.new(0, 0) or Vector2.new(0.5, 0),
+		AnchorPoint = (align == Enum.HorizontalAlignment.Left) and Vector2.new(0, 0) or Vector2.new(0.5, 0),
 		BackgroundColor3 = self.theme.background,
 		BorderColor3 = self.theme.outline,
 		BorderSizePixel = 1,
 		Size = width and UDim2.new(0, width, 0, 0) or UDim2.new(0, 0, 0, 0),
-		Position = width and UDim2.new(0, 10, 0.3, 0) or UDim2.new(0.5, 0, 0.3, 0),
+		Position = (align == Enum.HorizontalAlignment.Left) and UDim2.new(0, 10, 0.3, 0) or UDim2.new(0.5, 0, 0.3, 0),
 		AutomaticSize = width and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY,
 		Visible = false, -- Hidden by default
 		Parent = self.hudScreen,
@@ -5202,13 +5204,14 @@ function library:hud(props)
 	utility.new("UIListLayout", {
 		Padding = UDim.new(0, 2),
 		SortOrder = Enum.SortOrder.LayoutOrder,
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		HorizontalAlignment = align,
 		Parent = contentFrame,
 	})
 
 	utility.new("UIPadding", {
 		PaddingTop = UDim.new(0, 5),
 		PaddingBottom = UDim.new(0, 5),
+		PaddingLeft = (align == Enum.HorizontalAlignment.Left) and UDim.new(0, 5) or UDim.new(0, 0),
 		Parent = contentFrame,
 	})
 
@@ -5250,7 +5253,7 @@ function library:hud(props)
 				Font = Enum.Font.SourceSans,
 				TextSize = 14,
 				TextColor3 = self.theme.text,
-				TextXAlignment = Enum.TextXAlignment.Center,
+				TextXAlignment = txtAlign,
 				Text = text,
 				Parent = self.content,
 			})
