@@ -5233,6 +5233,15 @@ function library:hud(props)
 				self.labels[key].Text = text
 				return
 			end
+			
+			-- Fallback: Check if label exists in UI but missing from cache (Prevents spamming)
+			local existing = self.content:FindFirstChild(tostring(key))
+			if existing then
+				self.labels[key] = existing
+				existing.Text = text
+				return
+			end
+
 			local label = utility.new("TextLabel", {
 				Name = tostring(key),
 				BackgroundTransparency = 1,
@@ -5252,6 +5261,9 @@ function library:hud(props)
 			if self.labels[key] then
 				self.labels[key]:Destroy()
 				self.labels[key] = nil
+			else
+				local existing = self.content:FindFirstChild(tostring(key))
+				if existing then existing:Destroy() end
 			end
 		end,
 		Clear = function(self)
