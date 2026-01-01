@@ -1801,6 +1801,8 @@ end
 function toggles:set(bool)
 	if bool ~= nil then
 		local toggle = self
+		if toggle.current == bool then return end
+
 		toggle.callback(bool)
 		toggle.current = bool
 		if bool then
