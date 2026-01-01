@@ -5069,6 +5069,7 @@ end
 
 function library:hud(props)
 	local title = props.title or "HUD"
+	local draggableBody = props.draggableBody
 	local hud = {}
 
 	local mainFrame = utility.new("Frame", {
@@ -5089,6 +5090,7 @@ function library:hud(props)
 		BackgroundColor3 = self.theme.accent,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 20),
+		Visible = not draggableBody,
 		Parent = mainFrame,
 	})
 	table.insert(self.themeitems["accent"]["BackgroundColor3"], titleBar)
@@ -5111,7 +5113,7 @@ function library:hud(props)
 		Name = "ContentFrame",
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 0),
-		Position = UDim2.new(0, 0, 0, 20),
+		Position = draggableBody and UDim2.new(0, 0, 0, 5) or UDim2.new(0, 0, 0, 20),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		Parent = mainFrame,
 	})
@@ -5128,7 +5130,11 @@ function library:hud(props)
 		Parent = contentFrame,
 	})
 
-	utility.dragify(titleBar, mainFrame, function() return self.isOpen end)
+	if draggableBody then
+		utility.dragify(mainFrame, mainFrame, function() return self.isOpen end)
+	else
+		utility.dragify(titleBar, mainFrame, function() return self.isOpen end)
+	end
 
 	hud = {
 		frame = mainFrame,
