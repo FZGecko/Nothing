@@ -362,6 +362,7 @@ function library:new(props)
 	window = {
 		["screen"] = screen,
 		["hudScreen"] = hudScreen,
+		["huds"] = {},
 		["isOpen"] = true,
 		["holder"] = holder,
 		["labels"] = {},
@@ -5234,6 +5235,7 @@ function library:hud(props)
 	hud = {
 		frame = mainFrame,
 		content = contentFrame,
+		title = title,
 		theme = self.theme,
 		labels = {}, -- [key] = label
 		Add = function(self, key, text)
@@ -5292,6 +5294,7 @@ function library:hud(props)
 		end,
 	}
 
+	table.insert(self.huds, hud)
 	setmetatable(hud, huds)
 	return hud
 end
