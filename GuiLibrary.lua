@@ -1305,7 +1305,7 @@ function pages:section(props)
 	local sectionholder = utility.new(
 		"Frame",
 		{
-			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BackgroundColor3 = self.library.theme.content,
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
@@ -1313,11 +1313,12 @@ function pages:section(props)
 			Parent = self[side]
 		}
 	)
+	table.insert(self.library.themeitems["content"]["BackgroundColor3"], sectionholder)
 	--
 	local outline = utility.new(
 		"Frame",
 		{
-			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BackgroundColor3 = self.library.theme.content,
 			BorderColor3 = Color3.fromRGB(12, 12, 12),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
@@ -1325,6 +1326,7 @@ function pages:section(props)
 			Parent = sectionholder
 		}
 	)
+	table.insert(self.library.themeitems["content"]["BackgroundColor3"], outline)
 	--
 	local color = utility.new(
 		"Frame",
@@ -1360,13 +1362,14 @@ function pages:section(props)
 			Position = UDim2.new(0,5,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
 			Parent = outline
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	--
 	utility.new(
 		"UIListLayout",
@@ -1764,13 +1767,14 @@ function sections:toggle(props)
 			Position = UDim2.new(0,20,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
 			Parent = toggleholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	--
 	local col = Color3.fromRGB(20, 20, 20)
 	if def then
@@ -1936,13 +1940,14 @@ function sections:button(props)
 			Size = UDim2.new(1,0,1,0),
 			Position = UDim2.new(0,0,0,0),
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			Font = self.library.font,
 			Parent = buttonholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], buttonpress)
 	--
 	buttonpress.MouseButton1Down:Connect(function()
 		callback()
@@ -2022,13 +2027,14 @@ function sections:slider(props)
 			Position = UDim2.new(0,0,0.5,0),
 			Font = self.library.font,
 			Text = def..measurement.."/"..max..measurement,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			ZIndex = 3,
 			Parent = outline
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], value)
 	--
 	local color = utility.new(
 		"Frame",
@@ -2090,13 +2096,14 @@ function sections:slider(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
 			Parent = sliderholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	-- // slider tbl
 	slider = {
 		["library"] = self.library,
@@ -2326,7 +2333,7 @@ function sections:dropdown(props)
 			Position = UDim2.new(0,5,0,0),
 			Font = self.library.font,
 			Text = def,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
@@ -2334,6 +2341,7 @@ function sections:dropdown(props)
 			Parent = outline
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], value)
 	--
 	local indicator = utility.new(
 		"TextLabel",
@@ -2344,7 +2352,7 @@ function sections:dropdown(props)
 			Position = UDim2.new(0.5,0,0,0),
 			Font = self.library.font,
 			Text = "+",
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Right",
@@ -2352,6 +2360,7 @@ function sections:dropdown(props)
 			Parent = outline
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], indicator)
 	--
 	local title = utility.new(
 		"TextLabel",
@@ -2361,13 +2370,14 @@ function sections:dropdown(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
 			Parent = dropdownholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	--
 	local dropdownbutton = utility.new(
 		"TextButton",
@@ -2465,7 +2475,7 @@ function sections:dropdown(props)
 				Position = UDim2.new(0.5,0,0,0),
 				Font = self.library.font,
 				Text = v,
-				TextColor3 = Color3.fromRGB(255,255,255),
+				TextColor3 = self.library.theme.text,
 				TextSize = self.library.textsize,
 				TextStrokeTransparency = 0,
 				TextXAlignment = "Left",
@@ -2474,6 +2484,7 @@ function sections:dropdown(props)
 				Parent = ddoptionbutton
 			}
 		)
+		table.insert(self.library.themeitems["text"]["TextColor3"], ddoptiontitle)
 		--
 		self.library.labels[#self.library.labels+1] = ddoptiontitle
 		--
@@ -2882,7 +2893,7 @@ function sections:multibox(props)
 			Position = UDim2.new(0,5,0,0),
 			Font = self.library.font,
 			Text = defstr,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
@@ -2890,6 +2901,7 @@ function sections:multibox(props)
 			Parent = outline
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], value)
 	--
 	local indicator = utility.new(
 		"TextLabel",
@@ -2900,7 +2912,7 @@ function sections:multibox(props)
 			Position = UDim2.new(0.5,0,0,0),
 			Font = self.library.font,
 			Text = "+",
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Right",
@@ -2908,6 +2920,7 @@ function sections:multibox(props)
 			Parent = outline
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], indicator)
 	--
 	local title = utility.new(
 		"TextLabel",
@@ -2917,13 +2930,14 @@ function sections:multibox(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
 			Parent = multiboxholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	--
 	local dropdownbutton = utility.new(
 		"TextButton",
@@ -3020,7 +3034,7 @@ function sections:multibox(props)
 				Position = UDim2.new(0.5,0,0,0),
 				Font = self.library.font,
 				Text = v,
-				TextColor3 = Color3.fromRGB(255,255,255),
+				TextColor3 = self.library.theme.text,
 				TextSize = self.library.textsize,
 				TextStrokeTransparency = 0,
 				TextXAlignment = "Left",
@@ -3029,6 +3043,7 @@ function sections:multibox(props)
 				Parent = ddoptionbutton
 			}
 		)
+		table.insert(self.library.themeitems["text"]["TextColor3"], ddoptiontitle)
 		--
 		self.library.labels[#self.library.labels+1] = ddoptiontitle
 		--
@@ -3234,13 +3249,14 @@ function sections:textbox(props)
 			Size = UDim2.new(1,0,1,0),
 			Position = UDim2.new(0,0,0,0),
 			Text = "",
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			Font = self.library.font,
 			Parent = textboxholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], button)
 	--
 	local title = utility.new(
 		"TextLabel",
@@ -3250,13 +3266,14 @@ function sections:textbox(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
 			Parent = textboxholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	--
 	local tbox = utility.new(
 		"TextBox",
@@ -3267,7 +3284,7 @@ function sections:textbox(props)
 			Position = UDim2.new(0.5,0,0,15),
 			PlaceholderText = placeholder,
 			Text = def,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextTruncate = "AtEnd",
@@ -3275,6 +3292,7 @@ function sections:textbox(props)
 			Parent = textboxholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], tbox)
 	-- // textbox tbl
 	textbox = {
 		["library"] = self.library,
@@ -3414,13 +3432,14 @@ function sections:keybind(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = default,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Center",
 			Parent = outline
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], value)
 	--
 	outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
 	--
@@ -3458,13 +3477,14 @@ function sections:keybind(props)
 			Size = UDim2.new(1,0,1,0),
 			Position = UDim2.new(0,0,0,0),
 			Text = "",
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			Font = self.library.font,
 			Parent = btnParent
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], button)
 	--
 	local title = utility.new(
 		"TextLabel",
@@ -3474,7 +3494,7 @@ function sections:keybind(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
@@ -3482,6 +3502,7 @@ function sections:keybind(props)
 			Parent = keybindholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	-- // keybind tbl
 	keybind = {
 		["library"] = self.library,
@@ -3714,13 +3735,14 @@ function sections:colorpicker(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
 			Parent = colorpickerholder
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], title)
 	--
 	local btnSize = UDim2.new(1,0,1,0)
 	local btnPos = UDim2.new(0,0,0,0)
@@ -3800,7 +3822,7 @@ function sections:colorpicker(props)
 			Position = UDim2.new(0.5,0,0,0),
 			Font = self.library.font,
 			Text = cpname or name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = self.library.theme.text,
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
@@ -3808,6 +3830,7 @@ function sections:colorpicker(props)
 			Parent = outline2
 		}
 	)
+	table.insert(self.library.themeitems["text"]["TextColor3"], cptitle)
 	--
 	local cpholder2 = utility.new(
 		"Frame",
@@ -5179,6 +5202,7 @@ function library:hud(props)
 	hud = {
 		frame = mainFrame,
 		content = contentFrame,
+		theme = self.theme,
 		labels = {}, -- [key] = label
 		Add = function(self, key, text)
 			if self.labels[key] then
