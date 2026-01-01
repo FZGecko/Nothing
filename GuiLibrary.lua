@@ -5172,7 +5172,8 @@ function library:hud(props)
 		Name = "TitleBar",
 		BackgroundColor3 = self.theme.accent,
 		BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, 20),
+		Size = width and UDim2.new(1, 0, 0, 20) or UDim2.new(0, 0, 0, 20),
+		AutomaticSize = width and Enum.AutomaticSize.None or Enum.AutomaticSize.X,
 		Visible = not draggableBody,
 		Parent = mainFrame,
 	})
@@ -5181,8 +5182,9 @@ function library:hud(props)
 	local titleLabel = utility.new("TextLabel", {
 		Name = "TitleLabel",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, -10, 1, 0),
+		Size = width and UDim2.new(1, -10, 1, 0) or UDim2.new(0, 0, 1, 0),
 		Position = UDim2.new(0, 5, 0, 0),
+		AutomaticSize = width and Enum.AutomaticSize.None or Enum.AutomaticSize.X,
 		Font = self.font,
 		Text = title,
 		TextColor3 = self.theme.text,
