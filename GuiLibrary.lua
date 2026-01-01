@@ -69,7 +69,7 @@ utility.new = function(instance,properties)
 	return ins
 end
 --
-utility.dragify = function(ins,touse)
+utility.dragify = function(ins,touse,customCondition)
 	local dragging
 	local dragInput
 	local dragStart
@@ -82,6 +82,7 @@ utility.dragify = function(ins,touse)
 	--
 	ins.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			if customCondition and not customCondition() then return end
 			dragging = true
 			dragStart = input.Position
 			startPos = touse.Position
@@ -165,9 +166,21 @@ function library:new(props)
 			Parent = cre
 		}
 	)
+	
+	local hudScreen = utility.new(
+		"ScreenGui",
+		{
+			Name = "HUD_" .. tostring(math.random(0,999999)),
+			DisplayOrder = 9990, -- Slightly behind main GUI
+			ResetOnSpawn = false,
+			ZIndexBehavior = "Global",
+			Parent = cre
+		}
+	)
 	--
         if (check_exploit == "Synapse" and syn.protect_gui) then
 	syn.protect_gui(screen)
+	syn.protect_gui(hudScreen)
         end
 	-- 1
 	local outline = utility.new(
@@ -340,6 +353,8 @@ function library:new(props)
 	-- // window tbl
 	window = {
 		["screen"] = screen,
+		["hudScreen"] = hudScreen,
+		["isOpen"] = true,
 		["holder"] = holder,
 		["labels"] = {},
 		["tabs"] = outline4,
@@ -382,6 +397,7 @@ function library:new(props)
 			if toggled then
 				cooldown = true
 				toggled = not toggled
+				window.isOpen = toggled
 				saved = outline.Position
 				local xx,yy = 0,0
 				local xxx,yyy = 0,0
@@ -413,6 +429,7 @@ function library:new(props)
 			else
 				cooldown = true
 				toggled = not toggled
+				window.isOpen = toggled
 				if window.x == false and window.y == false then
 					screen.Enabled = true
 				else
@@ -5047,6 +5064,7 @@ function library:destroy()
 
 	-- Destroy the main ScreenGui, which will cascade to all children
 	self.screen:Destroy()
+	if self.hudScreen then self.hudScreen:Destroy() end
 end
 
 function library:hud(props)
@@ -5063,7 +5081,7 @@ function library:hud(props)
 		Position = UDim2.new(0, 10, 0.3, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		Visible = false, -- Hidden by default
-		Parent = self.screen,
+		Parent = self.hudScreen,
 	})
 
 	local titleBar = utility.new("Frame", {
@@ -5110,7 +5128,7 @@ function library:hud(props)
 		Parent = contentFrame,
 	})
 
-	utility.dragify(titleBar, mainFrame)
+	utility.dragify(titleBar, mainFrame, function() return self.isOpen end)
 
 	hud = {
 		frame = mainFrame,
