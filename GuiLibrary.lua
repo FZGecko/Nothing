@@ -56,7 +56,11 @@ watermarks.__index = watermarks
 loaderguis.__index = loaderguis
 -- // functions
 library.theme = {
-	accent = Color3.fromRGB(225, 58, 81) -- Default accent color
+	accent = Color3.fromRGB(225, 58, 81),
+	background = Color3.fromRGB(20, 20, 20),
+	content = Color3.fromRGB(24, 24, 24),
+	text = Color3.fromRGB(255, 255, 255),
+	outline = Color3.fromRGB(12, 12, 12)
 }
 utility.new = function(instance,properties) 
 	-- // instance
@@ -152,6 +156,10 @@ function library:new(props)
 	local font = props.font or props.Font or "RobotoMono"
 	local name = props.name or props.Name or props.UiName or props.Uiname or props.uiName or props.username or props.Username or props.UserName or props.userName or "new ui"
 	local color = props.color or props.Color or props.mainColor or props.maincolor or props.MainColor or props.Maincolor or props.Accent or props.accent or Color3.fromRGB(225, 58, 81)
+	local background = props.background or self.theme.background
+	local content = props.content or self.theme.content
+	local text = props.text or self.theme.text
+	local outline_col = props.outline or self.theme.outline
 	-- // variables
 	self.theme.accent = color -- Set the library-wide theme color
 	local window = {}
@@ -187,8 +195,8 @@ function library:new(props)
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0.5,0.5),
-			BackgroundColor3 = color,
-			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BackgroundColor3 = color, -- Accent
+			BorderColor3 = outline_col,
 			BorderSizePixel = 1,
 			Size = UDim2.new(0,500,0,606),
 			Position = UDim2.new(0.5,0,0.5,0),
@@ -200,8 +208,8 @@ function library:new(props)
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0.5,0.5),
-			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0), -- Keep black for contrast
+			BorderColor3 = outline_col,
 			BorderSizePixel = 1,
 			Size = UDim2.new(1,-4,1,-4),
 			Position = UDim2.new(0.5,0,0.5,0),
@@ -213,7 +221,7 @@ function library:new(props)
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0.5,0.5),
-			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BackgroundColor3 = background,
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
@@ -227,7 +235,7 @@ function library:new(props)
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0.5,1),
-			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BackgroundColor3 = background,
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
@@ -252,8 +260,8 @@ function library:new(props)
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0.5,0.5),
-			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
-			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BackgroundColor3 = content,
+			BorderColor3 = outline_col,
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
 			Size = UDim2.new(1,0,1,0),
@@ -271,7 +279,7 @@ function library:new(props)
 			Position = UDim2.new(0.5,0,0,0),
 			Font = font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = text,
 			TextXAlignment = "Left",
 			TextSize = textsize,
 			TextStrokeTransparency = 0,
@@ -305,8 +313,8 @@ function library:new(props)
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0.5,1),
-			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BackgroundColor3 = background,
+			BorderColor3 = outline_col,
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
 			Size = UDim2.new(1,0,1,-20),
@@ -330,7 +338,7 @@ function library:new(props)
 	local outline4 = utility.new(
 		"Frame",
 		{
-			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BackgroundColor3 = background,
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
@@ -374,14 +382,40 @@ function library:new(props)
 		["theme"] = self.theme, -- Reference the library's theme
 		["themeitems"] = {
 			["accent"] = {
-				["BackgroundColor3"] = {}, 
-				["BorderColor3"] = {},
+				["BackgroundColor3"] = {}, ["BorderColor3"] = {}, ["TextColor3"] = {}
+			},
+			["background"] = {
+				["BackgroundColor3"] = {}
+			},
+			["content"] = {
+				["BackgroundColor3"] = {}
+			},
+			["text"] = {
 				["TextColor3"] = {}
+			},
+			["outline"] = {
+				["BorderColor3"] = {}
 			}
-		}
+		},
+		["register"] = function(self, theme, property, object)
+			if not self.themeitems[theme] then self.themeitems[theme] = {} end
+			if not self.themeitems[theme][property] then self.themeitems[theme][property] = {} end
+			table.insert(self.themeitems[theme][property], object)
+		end
 	}
 	--
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
+	window:register("background", "BackgroundColor3", indent)
+	window:register("background", "BackgroundColor3", main)
+	window:register("background", "BackgroundColor3", tabs)
+	window:register("background", "BackgroundColor3", outline4)
+	window:register("content", "BackgroundColor3", outline3)
+	window:register("text", "TextColor3", titletext)
+	window:register("outline", "BorderColor3", outline)
+	window:register("outline", "BorderColor3", outline2)
+	window:register("outline", "BorderColor3", outline3)
+	window:register("outline", "BorderColor3", tabs)
+
 	window.connections = {}
 
 	local toggled = true
@@ -5075,12 +5109,12 @@ function library:hud(props)
 	local mainFrame = utility.new("Frame", {
 		Name = "HUD_Frame",
 		AnchorPoint = Vector2.new(0, 0),
-		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-		BorderColor3 = Color3.fromRGB(12, 12, 12),
+		BackgroundColor3 = self.theme.background,
+		BorderColor3 = self.theme.outline,
 		BorderSizePixel = 1,
-		Size = UDim2.new(0, 200, 0, 0), -- Width is fixed, height is automatic
+		Size = UDim2.new(0, 0, 0, 0), -- Auto size
 		Position = UDim2.new(0, 10, 0.3, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		AutomaticSize = Enum.AutomaticSize.XY,
 		Visible = false, -- Hidden by default
 		Parent = self.hudScreen,
 	})
@@ -5102,7 +5136,7 @@ function library:hud(props)
 		Position = UDim2.new(0, 5, 0, 0),
 		Font = self.font,
 		Text = title,
-		TextColor3 = Color3.fromRGB(255, 255, 255),
+		TextColor3 = self.theme.text,
 		TextSize = self.textsize,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = titleBar,
@@ -5114,13 +5148,14 @@ function library:hud(props)
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 0),
 		Position = draggableBody and UDim2.new(0, 0, 0, 5) or UDim2.new(0, 0, 0, 20),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		AutomaticSize = Enum.AutomaticSize.XY,
 		Parent = mainFrame,
 	})
 
 	utility.new("UIListLayout", {
 		Padding = UDim.new(0, 2),
-		SortOrder = Enum.SortOrder.Name,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		Parent = contentFrame,
 	})
 
@@ -5136,6 +5171,11 @@ function library:hud(props)
 		utility.dragify(titleBar, mainFrame, function() return self.isOpen end)
 	end
 
+	-- Register HUD elements for theming
+	self:register("background", "BackgroundColor3", mainFrame)
+	self:register("outline", "BorderColor3", mainFrame)
+	self:register("text", "TextColor3", titleLabel)
+
 	hud = {
 		frame = mainFrame,
 		content = contentFrame,
@@ -5148,14 +5188,16 @@ function library:hud(props)
 			local label = utility.new("TextLabel", {
 				Name = tostring(key),
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 16),
+				Size = UDim2.new(0, 0, 0, 16),
+				AutomaticSize = Enum.AutomaticSize.X,
 				Font = Enum.Font.SourceSans,
 				TextSize = 14,
-				TextColor3 = Color3.fromRGB(255, 255, 255),
-				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = self.theme.text,
+				TextXAlignment = Enum.TextXAlignment.Center,
 				Text = text,
 				Parent = self.content,
 			})
+			self:register("text", "TextColor3", label)
 			self.labels[key] = label
 		end,
 		Remove = function(self, key)
