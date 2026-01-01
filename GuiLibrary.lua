@@ -166,7 +166,7 @@ function library:new(props)
 		}
 	)
 	--
-        if (check_exploit == "Synapse" and syn.request) then
+        if (check_exploit == "Synapse" and syn.protect_gui) then
 	syn.protect_gui(screen)
         end
 	-- 1
@@ -579,7 +579,7 @@ function library:loaderGui(props)
 		}
 	)
 
-	if (check_exploit == "Synapse" and syn.request) then
+	if (check_exploit == "Synapse" and syn.protect_gui) then
 		syn.protect_gui(screen)
 	end
 
@@ -699,7 +699,7 @@ function library:loader(props)
 			Parent = cre
 		}
 	)
-        if (check_exploit == "Synapse" and syn.request) then
+        if (check_exploit == "Synapse" and syn.protect_gui) then
 	syn.protect_gui(screen)
         end
 	--
