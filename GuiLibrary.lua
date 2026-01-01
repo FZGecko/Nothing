@@ -5172,8 +5172,8 @@ function library:hud(props)
 		Name = "TitleBar",
 		BackgroundColor3 = self.theme.accent,
 		BorderSizePixel = 0,
-		Size = width and UDim2.new(1, 0, 0, 20) or UDim2.new(0, 0, 0, 20),
-		AutomaticSize = width and Enum.AutomaticSize.None or Enum.AutomaticSize.X,
+		Size = UDim2.new(1, 0, 0, 20), -- Always fill parent width
+		AutomaticSize = Enum.AutomaticSize.None, -- Never auto-size the bar itself
 		Visible = not draggableBody,
 		Parent = mainFrame,
 	})
@@ -5182,7 +5182,7 @@ function library:hud(props)
 	local titleLabel = utility.new("TextLabel", {
 		Name = "TitleLabel",
 		BackgroundTransparency = 1,
-		Size = width and UDim2.new(1, -10, 1, 0) or UDim2.new(0, 0, 1, 0),
+		Size = width and UDim2.new(1, -10, 0, 20) or UDim2.new(0, 0, 0, 20), -- Use Offset Y since parent is variable height
 		Position = UDim2.new(0, 5, 0, 0),
 		AutomaticSize = width and Enum.AutomaticSize.None or Enum.AutomaticSize.X,
 		Font = self.font,
@@ -5190,7 +5190,9 @@ function library:hud(props)
 		TextColor3 = self.theme.text,
 		TextSize = self.textsize,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = titleBar,
+		ZIndex = 2, -- Ensure text is above the bar
+		Visible = not draggableBody,
+		Parent = mainFrame, -- Parent to mainFrame to drive size
 	})
 	self.labels[#self.labels + 1] = titleLabel
 
@@ -5221,6 +5223,7 @@ function library:hud(props)
 		utility.dragify(mainFrame, mainFrame, function() return self.isOpen end)
 	else
 		utility.dragify(titleBar, mainFrame, function() return self.isOpen end)
+		utility.dragify(titleLabel, mainFrame, function() return self.isOpen end) -- Allow dragging via text
 	end
 
 	-- Register HUD elements for theming
