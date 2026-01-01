@@ -5167,6 +5167,13 @@ function library:hud(props)
 		SetVisible = function(self, visible)
 			self.frame.Visible = visible
 		end,
+		SetTransparency = function(self, transparency)
+			self.frame.BackgroundTransparency = transparency
+			local titleBar = self.frame:FindFirstChild("TitleBar")
+			if titleBar then
+				titleBar.BackgroundTransparency = transparency
+			end
+		end,
 	}
 
 	setmetatable(hud, huds)
