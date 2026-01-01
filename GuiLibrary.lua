@@ -5150,6 +5150,7 @@ end
 function library:hud(props)
 	local title = props.title or "HUD"
 	local draggableBody = props.draggableBody
+	local width = props.width -- Optional fixed width
 	local hud = {}
 
 	local mainFrame = utility.new("Frame", {
@@ -5158,9 +5159,9 @@ function library:hud(props)
 		BackgroundColor3 = self.theme.background,
 		BorderColor3 = self.theme.outline,
 		BorderSizePixel = 1,
-		Size = UDim2.new(0, 0, 0, 0), -- Auto size
+		Size = width and UDim2.new(0, width, 0, 0) or UDim2.new(0, 0, 0, 0),
 		Position = UDim2.new(0, 10, 0.3, 0),
-		AutomaticSize = Enum.AutomaticSize.XY,
+		AutomaticSize = width and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY,
 		Visible = false, -- Hidden by default
 		Parent = self.hudScreen,
 	})
@@ -5192,9 +5193,9 @@ function library:hud(props)
 	local contentFrame = utility.new("Frame", {
 		Name = "ContentFrame",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0, 0, 0, 0),
+		Size = width and UDim2.new(1, 0, 0, 0) or UDim2.new(0, 0, 0, 0),
 		Position = draggableBody and UDim2.new(0, 0, 0, 5) or UDim2.new(0, 0, 0, 20),
-		AutomaticSize = Enum.AutomaticSize.XY,
+		AutomaticSize = width and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY,
 		Parent = mainFrame,
 	})
 
