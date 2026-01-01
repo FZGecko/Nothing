@@ -5155,12 +5155,12 @@ function library:hud(props)
 
 	local mainFrame = utility.new("Frame", {
 		Name = "HUD_Frame",
-		AnchorPoint = Vector2.new(0, 0),
+		AnchorPoint = width and Vector2.new(0, 0) or Vector2.new(0.5, 0),
 		BackgroundColor3 = self.theme.background,
 		BorderColor3 = self.theme.outline,
 		BorderSizePixel = 1,
 		Size = width and UDim2.new(0, width, 0, 0) or UDim2.new(0, 0, 0, 0),
-		Position = UDim2.new(0, 10, 0.3, 0),
+		Position = width and UDim2.new(0, 10, 0.3, 0) or UDim2.new(0.5, 0, 0.3, 0),
 		AutomaticSize = width and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY,
 		Visible = false, -- Hidden by default
 		Parent = self.hudScreen,
