@@ -1840,7 +1840,10 @@ function sections:toggle(props)
 		kb.parent = toggleholder
 		kb.flag = "toggle"
 		kb.name = ""
-		self:keybind(kb)
+		local keybindObj = self:keybind(kb)
+		keybindObj.action = function()
+			toggle:set(not toggle.current)
+		end
 	end
 	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
@@ -3606,6 +3609,12 @@ function sections:keybind(props)
 					turn("UserInputType", Input.UserInputType.Name, Input.UserInputType)
 				end
 			end
+		else
+			if keybind.current[2] ~= nil and ((Input.KeyCode.Name == keybind.current[2]) or (Input.UserInputType.Name == keybind.current[2])) and not uis:GetFocusedTextBox() then
+				if keybind.action then
+					keybind.action()
+				end
+			end
 		end
 	end)
 	--
@@ -5240,7 +5249,9 @@ function library:hud(props)
 		labels = {}, -- [key] = label
 		Add = function(self, key, text)
 			if self.labels[key] then
-				self.labels[key].Text = text
+				if self.labels[key].Text ~= text then
+					self.labels[key].Text = text
+				end
 				return
 			end
 			
