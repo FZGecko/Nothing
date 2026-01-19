@@ -1844,6 +1844,7 @@ function sections:toggle(props)
 		keybindObj.action = function()
 			toggle:set(not toggle.current)
 		end
+		toggle.keybind = keybindObj
 	end
 	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
