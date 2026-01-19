@@ -1980,6 +1980,30 @@ function sections:button(props)
 	return button
 end
 --
+function sections:label(props)
+	local name = props.name or "label"
+	local label = {}
+	local labelholder = utility.new("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1,0,0,20),
+		Parent = self.content
+	})
+	local text = utility.new("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1,-10,1,0),
+		Position = UDim2.new(0,5,0,0),
+		Font = self.library.font,
+		Text = name,
+		TextColor3 = self.library.theme.text,
+		TextSize = self.library.textsize,
+		TextStrokeTransparency = 0,
+		TextXAlignment = "Center",
+		Parent = labelholder
+	})
+	table.insert(self.library.themeitems["text"]["TextColor3"], text)
+	return label
+end
+--
 function sections:slider(props)
 	-- // properties
 	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
@@ -3613,6 +3637,15 @@ function sections:keybind(props)
 			if keybind.current[2] ~= nil and ((Input.KeyCode.Name == keybind.current[2]) or (Input.UserInputType.Name == keybind.current[2])) and not uis:GetFocusedTextBox() then
 				if keybind.action then
 					keybind.action()
+				end
+			end
+		end
+	end)
+	uis.InputEnded:Connect(function(Input)
+		if not keybind.down then
+			if keybind.current[2] ~= nil and ((Input.KeyCode.Name == keybind.current[2]) or (Input.UserInputType.Name == keybind.current[2])) and not uis:GetFocusedTextBox() then
+				if keybind.upAction then
+					keybind.upAction()
 				end
 			end
 		end
