@@ -5186,6 +5186,13 @@ function library:destroy()
 	end
 	self.connections = {}
 
+	-- Clean up rainbow loop references to prevent memory leaks
+	if self.colorpickers then
+		for _, cp in ipairs(self.colorpickers) do
+			activeRainbows[cp] = nil
+		end
+	end
+
 	-- Destroy the main ScreenGui, which will cascade to all children
 	self.screen:Destroy()
 	if self.hudScreen then self.hudScreen:Destroy() end
@@ -5345,7 +5352,7 @@ function library:hud(props)
 end
 
 -- Centralized Heartbeat Loop for Performance (Moved to end to ensure utility is defined)
-rs.Heartbeat:Connect(function()
+library.RainbowStep = rs.Heartbeat:Connect(function()
 	for cp, _ in pairs(activeRainbows) do
 		if cp.rainbowEnabled then
 			local speed = cp.rainbowSpeed
