@@ -1313,7 +1313,6 @@ function pages:section(props)
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
-			Size = UDim2.new(1,0,0,size),
 			Size = UDim2.new(1,0,0,0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Parent = self[side]
@@ -1329,7 +1328,6 @@ function pages:section(props)
 			BorderColor3 = Color3.fromRGB(12, 12, 12),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
-			Size = UDim2.new(1,0,1,0),
 			Size = UDim2.new(1,0,0,0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Parent = sectionholder
@@ -1354,12 +1352,9 @@ function pages:section(props)
 	local content = utility.new(
 		"Frame",
 		{
-			AnchorPoint = Vector2.new(0.5,1),
 			AnchorPoint = Vector2.new(0.5,0),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
-			Size = UDim2.new(1,-12,1,-25),
-			Position = UDim2.new(0.5,0,1,-5),
 			Size = UDim2.new(1,-12,0,0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Position = UDim2.new(0.5,0,0,25),
