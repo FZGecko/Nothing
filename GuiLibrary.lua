@@ -20,6 +20,7 @@ local huds = {}
 local watermarks = {}
 local loaders = {}
 local activeRainbows = {} -- Centralized table for rainbow pickers
+local rainbowConnection = nil -- Handle for the heartbeat loop
 
 --
 local utility = {}
@@ -32,6 +33,7 @@ local ts = game:GetService("TweenService")
 local uis = game:GetService("UserInputService") 
 local hs = game:GetService("HttpService")
 local ws = game:GetService("Workspace")
+local gethui = gethui or function() return cre end
 local plr = plrs.LocalPlayer
 local cam = ws.CurrentCamera
 -- // indexes
@@ -171,7 +173,7 @@ function library:new(props)
 			DisplayOrder = 9999,
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
-			Parent = cre
+			Parent = gethui()
 		}
 	)
 	
@@ -182,7 +184,7 @@ function library:new(props)
 			DisplayOrder = 9990, -- Slightly behind main GUI
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
-			Parent = cre
+			Parent = gethui()
 		}
 	)
 	--
@@ -627,7 +629,7 @@ function library:loaderGui(props)
 			DisplayOrder = 99999, -- Ensure it's on top of everything
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
-			Parent = cre
+			Parent = gethui()
 		}
 	)
 
@@ -748,7 +750,7 @@ function library:loader(props)
 			DisplayOrder = 9999,
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
-			Parent = cre
+			Parent = gethui()
 		}
 	)
         if (check_exploit == "Synapse" and syn.protect_gui) then
@@ -933,7 +935,7 @@ function library:loader(props)
 		wait(0.05)
 		close[2].BorderColor3 = Color3.fromRGB(12,12,12)
 		wait(0.7)
-		screen:Remove()
+		screen:Destroy()
 	end)
 	--
 	login[3].MouseButton1Down:Connect(function()
@@ -943,7 +945,7 @@ function library:loader(props)
 		wait(0.05)
 		login[2].BorderColor3 = Color3.fromRGB(12,12,12)
 		wait(0.7)
-		screen:Remove()
+		screen:Destroy()
 	end)
 	--
 	loader = {
@@ -3600,7 +3602,7 @@ function sections:keybind(props)
 		callback(enum)
 	end
 	--
-	uis.InputBegan:Connect(function(Input)
+	local inputBeganConn = uis.InputBegan:Connect(function(Input)
 		if keybind.down then
 			-- Ignore the initial MouseButton1 input that activated capture mode
 			if keybind.ignoreNextMouse1 and Input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -3642,7 +3644,9 @@ function sections:keybind(props)
 			end
 		end
 	end)
-	uis.InputEnded:Connect(function(Input)
+	table.insert(self.library.connections, inputBeganConn)
+
+	local inputEndedConn = uis.InputEnded:Connect(function(Input)
 		if not keybind.down then
 			if keybind.current[2] ~= nil and ((Input.KeyCode.Name == keybind.current[2]) or (Input.UserInputType.Name == keybind.current[2])) and not uis:GetFocusedTextBox() then
 				if keybind.upAction then
@@ -3651,6 +3655,7 @@ function sections:keybind(props)
 			end
 		end
 	end)
+	table.insert(self.library.connections, inputEndedConn)
 	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
 	--
@@ -5186,6 +5191,12 @@ function library:destroy()
 	end
 	self.connections = {}
 
+	if rainbowConnection then
+		rainbowConnection:Disconnect()
+		rainbowConnection = nil
+	end
+	table.clear(activeRainbows)
+
 	-- Clean up rainbow loop references to prevent memory leaks
 	if self.colorpickers then
 		for _, cp in ipairs(self.colorpickers) do
@@ -5271,10 +5282,14 @@ function library:hud(props)
 	})
 
 	if draggableBody then
-		utility.dragify(mainFrame, mainFrame, function() return self.isOpen end)
+		local dragConns = utility.dragify(mainFrame, mainFrame, function() return self.isOpen end)
+		for _, c in ipairs(dragConns) do table.insert(self.connections, c) end
 	else
-		utility.dragify(titleBar, mainFrame, function() return self.isOpen end)
-		utility.dragify(titleLabel, mainFrame, function() return self.isOpen end) -- Allow dragging via text
+		local dragConns1 = utility.dragify(titleBar, mainFrame, function() return self.isOpen end)
+		for _, c in ipairs(dragConns1) do table.insert(self.connections, c) end
+		
+		local dragConns2 = utility.dragify(titleLabel, mainFrame, function() return self.isOpen end) -- Allow dragging via text
+		for _, c in ipairs(dragConns2) do table.insert(self.connections, c) end
 	end
 
 	-- Register HUD elements for theming
@@ -5352,8 +5367,13 @@ function library:hud(props)
 end
 
 -- Centralized Heartbeat Loop for Performance (Moved to end to ensure utility is defined)
-library.RainbowStep = rs.Heartbeat:Connect(function()
+rainbowConnection = rs.Heartbeat:Connect(function()
 	for cp, _ in pairs(activeRainbows) do
+		if not cp.cpcolor or not cp.cpcolor.Parent then
+			activeRainbows[cp] = nil
+			continue
+		end
+
 		if cp.rainbowEnabled then
 			local speed = cp.rainbowSpeed
 			local cycleTime = 10.1 - speed -- Map speed 1-10 to cycle time
