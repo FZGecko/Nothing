@@ -1314,6 +1314,8 @@ function pages:section(props)
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
 			Size = UDim2.new(1,0,0,size),
+			Size = UDim2.new(1,0,0,0),
+			AutomaticSize = Enum.AutomaticSize.Y,
 			Parent = self[side]
 		}
 	)
@@ -1328,6 +1330,8 @@ function pages:section(props)
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
 			Size = UDim2.new(1,0,1,0),
+			Size = UDim2.new(1,0,0,0),
+			AutomaticSize = Enum.AutomaticSize.Y,
 			Parent = sectionholder
 		}
 	)
@@ -1351,10 +1355,14 @@ function pages:section(props)
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0.5,1),
+			AnchorPoint = Vector2.new(0.5,0),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			Size = UDim2.new(1,-12,1,-25),
 			Position = UDim2.new(0.5,0,1,-5),
+			Size = UDim2.new(1,-12,0,0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Position = UDim2.new(0.5,0,0,25),
 			Parent = outline
 		}
 	)
@@ -1382,6 +1390,13 @@ function pages:section(props)
 		{
 			FillDirection = "Vertical",
 			Padding = UDim.new(0,5),
+			Parent = content
+		}
+	)
+	utility.new(
+		"UIPadding",
+		{
+			PaddingBottom = UDim.new(0, 5),
 			Parent = content
 		}
 	)
