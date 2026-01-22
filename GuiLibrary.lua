@@ -1,5 +1,10 @@
 -- Loadstring: https://raw.githubusercontent.com/FZGecko/Nothing/refs/heads/main/GuiLibrary.lua
 -- // variables
+if shared and shared.GuiLibrary then
+	warn("GuiLibrary already loaded. Terminating.")
+	return {} -- Return empty table to prevent script from running
+end
+
 local library = {}
 local pages = {}
 local sections = {}
@@ -25,7 +30,6 @@ local rainbowConnection = nil -- Handle for the heartbeat loop
 --
 local utility = {}
 --
-local check_exploit = (syn and "Synapse") or (KRNL_LOADED and "Krnl") or (isourclosure and "ScriptWare") or nil
 local plrs = game:GetService("Players")
 local cre = game:GetService("CoreGui")
 local rs = game:GetService("RunService")
@@ -36,6 +40,9 @@ local ws = game:GetService("Workspace")
 local gethui = gethui or function() return cre end
 local plr = plrs.LocalPlayer
 local cam = ws.CurrentCamera
+shared.GuiLibrary = library
+shared.GuiLibrary.pages = pages
+
 -- // indexes
 library.__index = library
 pages.__index = pages
@@ -169,7 +176,7 @@ function library:new(props)
 	local screen = utility.new(
 		"ScreenGui",
 		{
-			Name = tostring(math.random(0,999999))..tostring(math.random(0,999999)),
+			Name = hs:GenerateGUID(false),
 			DisplayOrder = 9999,
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
@@ -180,7 +187,7 @@ function library:new(props)
 	local hudScreen = utility.new(
 		"ScreenGui",
 		{
-			Name = "HUD_" .. tostring(math.random(0,999999)),
+			Name = hs:GenerateGUID(false),
 			DisplayOrder = 9990, -- Slightly behind main GUI
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
@@ -188,10 +195,10 @@ function library:new(props)
 		}
 	)
 	--
-        if (check_exploit == "Synapse" and syn.protect_gui) then
-	syn.protect_gui(screen)
-	syn.protect_gui(hudScreen)
-        end
+	if (syn and syn.protect_gui) then
+		pcall(syn.protect_gui, screen)
+		pcall(syn.protect_gui, hudScreen)
+	end
 	-- 1
 	local outline = utility.new(
 		"Frame",
@@ -625,7 +632,7 @@ function library:loaderGui(props)
 	local screen = utility.new(
 		"ScreenGui",
 		{
-			Name = "LoaderGui_" .. tostring(math.random(0,999999)),
+			Name = hs:GenerateGUID(false),
 			DisplayOrder = 99999, -- Ensure it's on top of everything
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
@@ -633,8 +640,8 @@ function library:loaderGui(props)
 		}
 	)
 
-	if (check_exploit == "Synapse" and syn.protect_gui) then
-		syn.protect_gui(screen)
+	if (syn and syn.protect_gui) then
+		pcall(syn.protect_gui, screen)
 	end
 
 	local mainFrame = utility.new(
@@ -746,16 +753,16 @@ function library:loader(props)
 	local screen = utility.new(
 		"ScreenGui",
 		{
-			Name = tostring(math.random(0,999999))..tostring(math.random(0,999999)),
+			Name = hs:GenerateGUID(false),
 			DisplayOrder = 9999,
 			ResetOnSpawn = false,
 			ZIndexBehavior = "Global",
 			Parent = gethui()
 		}
 	)
-        if (check_exploit == "Synapse" and syn.protect_gui) then
-	syn.protect_gui(screen)
-        end
+	if (syn and syn.protect_gui) then
+		pcall(syn.protect_gui, screen)
+	end
 	--
 	local outline = utility.new(
 		"Frame",
