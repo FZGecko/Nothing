@@ -1,3 +1,4 @@
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/FZGecko/Nothing/refs/heads/main/PrivateLibrary.lua"))()
 -- main.lua
 local function GetSafeService(service_name)
     return (cloneref and cloneref(game:GetService(service_name))) or game:GetService(service_name)
