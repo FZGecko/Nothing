@@ -827,6 +827,8 @@ function Section:AddToggle(options)
         AttachColorLogic(ColorPreview, ColorFill, colorState, self.Window.Library, UpdateColor)
         
         if color_flag then
+            -- [Fix] Initialize flag immediately so it's not nil before interaction
+            self.Window.Library.Flags[color_flag] = { Color = Utility.ColorToTable(color_default), Transparency = color_trans, Rainbow = false, Speed = 1 }
             self.Window.Library.ConfigRegistry[color_flag] = { Set = function(v) UpdateColor(Utility.TableToColor(v.Color), v.Transparency, v.Rainbow, v.Speed) end, Type = "Color" }
         end
     end
@@ -1505,6 +1507,8 @@ function Section:AddColorPicker(options)
     AttachColorLogic(Preview, ColorFill, colorState, self.Window.Library, UpdateColor)
 
     if flag then
+        -- [Fix] Initialize flag immediately
+        self.Window.Library.Flags[flag] = { Color = Utility.ColorToTable(default), Transparency = transparency, Rainbow = false, Speed = 1 }
         self.Window.Library.ConfigRegistry[flag] = { Set = function(v) UpdateColor(Utility.TableToColor(v.Color), v.Transparency, v.Rainbow, v.Speed) end, Type = "Color" }
     end
 
