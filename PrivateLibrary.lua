@@ -34,10 +34,13 @@ local Utility = {}
 
 -- [Optimization] Cached TweenInfos to prevent object churning
 local function SafeTweenInfo(t, s, d)
-    if TweenInfo and TweenInfo.new then
+    if not (TweenInfo and TweenInfo.new) then return nil end
+    if s and d then
         return TweenInfo.new(t, s, d)
+    elseif s then
+        return TweenInfo.new(t, s)
     end
-    return nil
+    return TweenInfo.new(t)
 end
 
 local TI_01 = SafeTweenInfo(0.1)
