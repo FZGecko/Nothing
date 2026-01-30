@@ -748,6 +748,7 @@ function Section:AddToggle(options)
     if extra_bind then
         local currentBind = extra_bind.Default
         local bind_cb = extra_bind.Callback or function() end
+        local bind_flag = extra_bind.Flag
         
         local BindBtn = Utility.Create("TextButton", {
             Name = "Keybind",
@@ -768,6 +769,7 @@ function Section:AddToggle(options)
 
         local GetBind = AttachBindLogic(BindBtn, currentBind, function(newBind)
             currentBind = newBind
+            if bind_flag then self.Window.Library.Flags[bind_flag] = (newBind and newBind.Name) or nil end
             Utility.pcallNotify(self.Window.Library, bind_cb, newBind)
             self.Window.Library:UpdateKeybind(bindID, name, newBind, state)
         end, self.Window.Library.Theme, self.Window.Library)
@@ -776,6 +778,7 @@ function Section:AddToggle(options)
 
         if currentBind then
             self.Window.Library:UpdateKeybind(bindID, name, currentBind, state)
+            if bind_flag then self.Window.Library.Flags[bind_flag] = currentBind.Name end
         end
     end
 
