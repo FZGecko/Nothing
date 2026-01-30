@@ -240,7 +240,7 @@ local function AttachColorLogic(previewBtn, colorFill, state, library, callback)
             state.Speed = s
             colorFill.BackgroundColor3 = c
             colorFill.BackgroundTransparency = t
-            Utility.pcallNotify(library, callback, c, t)
+            Utility.pcallNotify(library, callback, c, t, r, s)
         end)
     end
 
@@ -2539,7 +2539,8 @@ function Library:CreateColorPickerWindow()
         Position = UDim2.new(0, 115, 0, 235),
         BackgroundColor3 = self.Theme.Sidebar,
         Text = "",
-        AutoButtonColor = false
+        AutoButtonColor = false,
+        ClipsDescendants = true -- [Fix] Clip the fill so it looks like a proper bar
     }, { BackgroundColor3 = "Sidebar" })
     Utility.Create("UIStroke", { Parent = SpeedSlider, Color = self.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
     Utility.Create("UICorner", { Parent = SpeedSlider, CornerRadius = UDim.new(0, 4) })
@@ -2549,7 +2550,7 @@ function Library:CreateColorPickerWindow()
         Size = UDim2.new(0.5, 0, 1, 0),
         BackgroundColor3 = self.Theme.Accent
     }, { BackgroundColor3 = "Accent" })
-    Utility.Create("UICorner", { Parent = SpeedFill, CornerRadius = UDim.new(0, 4) })
+    -- [Fix] Removed inner UICorner to prevent "weird" pill-in-pill look
     
     local SpeedLabel = Utility.Create("TextLabel", {
         Parent = SpeedSlider,
