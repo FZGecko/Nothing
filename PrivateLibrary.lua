@@ -648,6 +648,7 @@ function Section:AddToggle(options)
     local state = options.Default or false
     local callback = options.Callback or function() end
     local extra_color = options.Color
+    local extra_color2 = options.Color2
     local extra_bind = options.Keybind
     local flag = options.Flag
     local mode_flag = extra_bind and extra_bind.ModeFlag
@@ -763,17 +764,19 @@ function Section:AddToggle(options)
         self.Window.Library.ConfigRegistry[flag] = { Set = SetState, Type = "Toggle" }
     end
 
-    if extra_color then
-        local color_default = extra_color.Default or Color3.fromRGB(255, 255, 255)
-        local color_trans = extra_color.Transparency or 0
-        local color_cb = extra_color.Callback or function() end
+    local function AddColorButton(opts)
+        if not opts then return end
+        
+        local color_default = opts.Default or Color3.fromRGB(255, 255, 255)
+        local color_trans = opts.Transparency or 0
+        local color_cb = opts.Callback or function() end
         local colorState = { 
             Color = color_default, 
             Transparency = color_trans, 
             Rainbow = false, 
             Speed = 1 
         }
-        local color_flag = extra_color.Flag
+        local color_flag = opts.Flag
         
         local ColorPreview = Utility.Create("TextButton", {
             Name = "Color",
@@ -827,6 +830,9 @@ function Section:AddToggle(options)
             self.Window.Library.ConfigRegistry[color_flag] = { Set = function(v) UpdateColor(Utility.TableToColor(v.Color), v.Transparency, v.Rainbow, v.Speed) end, Type = "Color" }
         end
     end
+
+    AddColorButton(extra_color)
+    AddColorButton(extra_color2)
 
     if extra_bind then
         local currentBind = extra_bind.Default
