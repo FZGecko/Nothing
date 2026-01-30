@@ -28,6 +28,11 @@ Library.Rainbows = {}
 
 local Utility = {}
 
+-- [Optimization] Cached TweenInfos to prevent object churning
+local TI_01 = TweenInfo.new(0.1)
+local TI_02 = TweenInfo.new(0.2)
+local TI_QuadOut = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
 function Utility.RandomString(length)
     local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     local str = ""
@@ -84,11 +89,15 @@ function Utility.AddRowHover(frame, theme)
     frame.BackgroundTransparency = 1
     frame:SetAttribute("ThemeTag_BackgroundColor3", "Sidebar")
 
+    -- [Optimization] Create tweens once, reuse them.
+    local tIn = TweenService:Create(frame, TI_02, { BackgroundTransparency = 0 })
+    local tOut = TweenService:Create(frame, TI_02, { BackgroundTransparency = 1 })
+
     frame.MouseEnter:Connect(function()
-        TweenService:Create(frame, TweenInfo.new(0.2), { BackgroundTransparency = 0 }):Play()
+        tIn:Play()
     end)
     frame.MouseLeave:Connect(function()
-        TweenService:Create(frame, TweenInfo.new(0.2), { BackgroundTransparency = 1 }):Play()
+        tOut:Play()
     end)
 end
 
@@ -162,6 +171,7 @@ end
 local function AttachBindLogic(button, initialBind, onBindChanged, theme, library)
     local currentBind = initialBind
     local listening = false
+    local connection = nil -- [Fix] Store connection to disconnect later
     local function UpdateText()
         local text = "None"
         if currentBind then
@@ -174,43 +184,50 @@ local function AttachBindLogic(button, initialBind, onBindChanged, theme, librar
     end
     UpdateText()
 
+    local function StopListening()
+        listening = false
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+        UpdateText()
+        button.TextColor3 = theme.TextDim
+    end
+
     button.MouseButton1Click:Connect(function()
         if not listening then
             button.Text = "..."
             button.TextColor3 = theme.Accent
             task.wait(0.2)
             listening = true
-        end
-    end)
-
-    local conn = UserInputService.InputBegan:Connect(function(input)
-        if listening then
-            local bind = nil
-            if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode ~= Enum.KeyCode.Unknown then
-                if input.KeyCode == Enum.KeyCode.Escape then
-                    listening = false
-                    currentBind = nil
-                    UpdateText()
-                    button.TextColor3 = theme.TextDim
-                    Utility.pcallNotify(library, onBindChanged, nil)
-                    return
+            
+            -- [Fix] Only connect to InputBegan when actually listening
+            connection = UserInputService.InputBegan:Connect(function(input)
+                local bind = nil
+                if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode ~= Enum.KeyCode.Unknown then
+                    if input.KeyCode == Enum.KeyCode.Escape then
+                        StopListening()
+                        currentBind = nil
+                        Utility.pcallNotify(library, onBindChanged, nil)
+                        return
+                    end
+                    bind = input.KeyCode
+                elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.MouseButton3 then
+                    bind = input.UserInputType
                 end
-                bind = input.KeyCode
-            elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.MouseButton3 then
-                bind = input.UserInputType
-            end
 
-            if bind then
-                listening = false
-                currentBind = bind
-                UpdateText()
-                button.TextColor3 = theme.TextDim
-                Utility.pcallNotify(library, onBindChanged, bind)
-            end
+                if bind then
+                    currentBind = bind
+                    StopListening()
+                    Utility.pcallNotify(library, onBindChanged, bind)
+                end
+            end)
         end
     end)
     
-    button.Destroying:Connect(function() conn:Disconnect() end)
+    button.Destroying:Connect(function() 
+        if connection then connection:Disconnect() end 
+    end)
     return function() return currentBind end
 end
 
@@ -263,12 +280,12 @@ local function AttachTooltip(parent, text, library)
     
     HelpBtn.MouseEnter:Connect(function()
         library:ShowTooltip(text)
-        TweenService:Create(HelpBtn, TweenInfo.new(0.2), { TextColor3 = theme.Accent }):Play()
+        TweenService:Create(HelpBtn, TI_02, { TextColor3 = theme.Accent }):Play()
     end)
     
     HelpBtn.MouseLeave:Connect(function()
         library:HideTooltip()
-        TweenService:Create(HelpBtn, TweenInfo.new(0.2), { TextColor3 = theme.TextDim }):Play()
+        TweenService:Create(HelpBtn, TI_02, { TextColor3 = theme.TextDim }):Play()
     end)
 end
 
@@ -389,14 +406,14 @@ function Tab:Activate()
 
     for _, t in ipairs(window.Tabs) do
         t.Page.Visible = false
-        TweenService:Create(t.Button, TweenInfo.new(0.3), { TextColor3 = library.Theme.TextDim }):Play()
+        TweenService:Create(t.Button, TI_02, { TextColor3 = library.Theme.TextDim }):Play()
         t.Button:SetAttribute("ThemeTag_TextColor3", "TextDim")
-        TweenService:Create(t.Indicator, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(t.Indicator, TI_02, { BackgroundTransparency = 1 }):Play()
     end
     self.Page.Visible = true
-    TweenService:Create(self.Button, TweenInfo.new(0.3), { TextColor3 = library.Theme.Text }):Play()
+    TweenService:Create(self.Button, TI_02, { TextColor3 = library.Theme.Text }):Play()
     self.Button:SetAttribute("ThemeTag_TextColor3", "Text")
-    TweenService:Create(self.Indicator, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(self.Indicator, TI_02, { BackgroundTransparency = 0 }):Play()
     library.ColorPickerWindow.Visible = false
     
     window.ActiveTab = self
@@ -543,21 +560,21 @@ function Section:AddButton(options)
     }, { Color = "Outline" })
 
     Button.MouseEnter:Connect(function()
-        TweenService:Create(Button, TweenInfo.new(0.2), { BackgroundColor3 = self.Window.Library.Theme.Outline, BackgroundTransparency = 0.2 }):Play()
-        TweenService:Create(Stroke, TweenInfo.new(0.2), { Color = self.Window.Library.Theme.Accent }):Play()
+        TweenService:Create(Button, TI_02, { BackgroundColor3 = self.Window.Library.Theme.Outline, BackgroundTransparency = 0.2 }):Play()
+        TweenService:Create(Stroke, TI_02, { Color = self.Window.Library.Theme.Accent }):Play()
     end)
 
     Button.MouseLeave:Connect(function()
-        TweenService:Create(Button, TweenInfo.new(0.2), { BackgroundColor3 = self.Window.Library.Theme.Sidebar, BackgroundTransparency = 0 }):Play()
-        TweenService:Create(Stroke, TweenInfo.new(0.2), { Color = self.Window.Library.Theme.Outline }):Play()
+        TweenService:Create(Button, TI_02, { BackgroundColor3 = self.Window.Library.Theme.Sidebar, BackgroundTransparency = 0 }):Play()
+        TweenService:Create(Stroke, TI_02, { Color = self.Window.Library.Theme.Outline }):Play()
     end)
     
     Button.MouseButton1Down:Connect(function()
-        TweenService:Create(Button, TweenInfo.new(0.1), { TextSize = 11 }):Play()
+        TweenService:Create(Button, TI_01, { TextSize = 11 }):Play()
     end)
     
     Button.MouseButton1Up:Connect(function()
-        TweenService:Create(Button, TweenInfo.new(0.1), { TextSize = 12 }):Play()
+        TweenService:Create(Button, TI_01, { TextSize = 12 }):Play()
     end)
 
     Button.MouseButton1Click:Connect(function() Utility.pcallNotify(self.Window.Library, callback) end)
@@ -662,8 +679,8 @@ function Section:AddToggle(options)
         local targetColor = state and self.Window.Library.Theme.Accent or self.Window.Library.Theme.Background
         local targetKnobColor = state and self.Window.Library.Theme.Text or self.Window.Library.Theme.TextDim
         
-        TweenService:Create(Knob, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = targetPos, BackgroundColor3 = targetKnobColor }):Play()
-        TweenService:Create(Switch, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = targetColor }):Play()
+        TweenService:Create(Knob, TI_QuadOut, { Position = targetPos, BackgroundColor3 = targetKnobColor }):Play()
+        TweenService:Create(Switch, TI_QuadOut, { BackgroundColor3 = targetColor }):Play()
         
         Switch:SetAttribute("ThemeTag_BackgroundColor3", state and "Accent" or "Background")
         Knob:SetAttribute("ThemeTag_BackgroundColor3", state and "Text" or "TextDim")
@@ -1121,7 +1138,7 @@ function Section:AddDropdown(options)
         isOpen = not isOpen
         ListContainer.Visible = isOpen
         
-        TweenService:Create(Arrow, TweenInfo.new(0.2), { Rotation = isOpen and 180 or 0 }):Play()
+        TweenService:Create(Arrow, TI_02, { Rotation = isOpen and 180 or 0 }):Play()
         
         if isOpen then
             local count = #items
@@ -1193,14 +1210,14 @@ function Section:AddDropdown(options)
             end)
 
             ItemBtn.MouseEnter:Connect(function()
-                TweenService:Create(ItemBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.85 }):Play()
+                TweenService:Create(ItemBtn, TI_01, { BackgroundTransparency = 0.85 }):Play()
                 if (multi and state.multi[item]) or (not multi and state.single == item) then return end
-                TweenService:Create(ItemBtn, TweenInfo.new(0.1), { TextColor3 = self.Window.Library.Theme.Text }):Play()
+                TweenService:Create(ItemBtn, TI_01, { TextColor3 = self.Window.Library.Theme.Text }):Play()
             end)
             ItemBtn.MouseLeave:Connect(function()
-                TweenService:Create(ItemBtn, TweenInfo.new(0.1), { BackgroundTransparency = 1 }):Play()
+                TweenService:Create(ItemBtn, TI_01, { BackgroundTransparency = 1 }):Play()
                 if (multi and state.multi[item]) or (not multi and state.single == item) then return end
-                TweenService:Create(ItemBtn, TweenInfo.new(0.1), { TextColor3 = self.Window.Library.Theme.TextDim }):Play()
+                TweenService:Create(ItemBtn, TI_01, { TextColor3 = self.Window.Library.Theme.TextDim }):Play()
             end)
         end
         
@@ -2157,12 +2174,12 @@ function Library:KeySystem(options)
         local Stroke = Utility.Create("UIStroke", { Parent = Btn, Color = self.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
         
         Btn.MouseEnter:Connect(function()
-            TweenService:Create(Btn, TweenInfo.new(0.2), { BackgroundColor3 = self.Theme.Outline }):Play()
-            TweenService:Create(Stroke, TweenInfo.new(0.2), { Color = self.Theme.Accent }):Play()
+            TweenService:Create(Btn, TI_02, { BackgroundColor3 = self.Theme.Outline }):Play()
+            TweenService:Create(Stroke, TI_02, { Color = self.Theme.Accent }):Play()
         end)
         Btn.MouseLeave:Connect(function()
-            TweenService:Create(Btn, TweenInfo.new(0.2), { BackgroundColor3 = self.Theme.Sidebar }):Play()
-            TweenService:Create(Stroke, TweenInfo.new(0.2), { Color = self.Theme.Outline }):Play()
+            TweenService:Create(Btn, TI_02, { BackgroundColor3 = self.Theme.Sidebar }):Play()
+            TweenService:Create(Stroke, TI_02, { Color = self.Theme.Outline }):Play()
         end)
         Btn.MouseButton1Click:Connect(cb)
         return Btn
