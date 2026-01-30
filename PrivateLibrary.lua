@@ -426,7 +426,7 @@ function Tab:AddSection(name, side)
     local section = setmetatable({
         Window = self.Window,
         Page = self.Page,
-        Container = nil
+        Container = nil,
         Root = nil -- [Feature] Expose Root for visibility toggling
     }, Section)
 
