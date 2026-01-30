@@ -768,7 +768,7 @@ function Section:AddToggle(options)
         if not opts then return end
         
         local color_default = opts.Default or Color3.fromRGB(255, 255, 255)
-        local color_trans = opts.Transparency or 0
+        local color_trans = opts.Transparency or 0.5
         local color_cb = opts.Callback or function() end
         local colorState = { 
             Color = color_default, 
@@ -1419,7 +1419,7 @@ function Section:AddColorPicker(options)
     options = options or {}
     local name = options.Name or "Color"
     local default = options.Default or Color3.fromRGB(255, 255, 255)
-    local transparency = options.Transparency or 0
+    local transparency = options.Transparency or 0.5
     local flag = options.Flag
     local callback = options.Callback or function() end
 
