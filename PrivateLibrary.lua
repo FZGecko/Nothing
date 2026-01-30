@@ -1294,7 +1294,9 @@ function Section:AddKeybind(options)
         self.Window.Library.Flags[flag] = (currentBind and currentBind.Name) or nil
         self.Window.Library.ConfigRegistry[flag] = { 
             Set = function(val) 
-                local key = (val and Enum.KeyCode[val]) or (val and Enum.UserInputType[val])
+                local key
+                pcall(function() key = Enum.KeyCode[val] end)
+                if not key then pcall(function() key = Enum.UserInputType[val] end) end
                 GetBind(key) -- This needs to update the internal state of AttachBindLogic, which is tricky with closures.
             end, 
             Type = "Keybind" 
@@ -2668,6 +2670,7 @@ function Library:Notify(options)
     local Stroke = Utility.Create("UIStroke", { Parent = Frame, Color = self.Theme.Outline, Thickness = 1, Transparency = 1 }, { Color = "Outline" })
 
     Utility.Create("Frame", {
+        Name = "Accent",
         Parent = Frame,
         BackgroundColor3 = self.Theme.Accent,
         Size = UDim2.new(0, 2, 1, 0),
@@ -2703,14 +2706,14 @@ function Library:Notify(options)
 
     TweenService:Create(Frame, TweenInfo.new(0.3), { BackgroundTransparency = self.NotificationTransparency }):Play()
     TweenService:Create(Stroke, TweenInfo.new(0.3), { Transparency = 0 }):Play()
-    TweenService:Create(Frame.Frame, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(Frame.Accent, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
     TweenService:Create(TitleLabel, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
     TweenService:Create(ContentLabel, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
 
     task.delay(duration, function()
         TweenService:Create(Frame, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
         TweenService:Create(Stroke, TweenInfo.new(0.3), { Transparency = 1 }):Play()
-        TweenService:Create(Frame.Frame, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(Frame.Accent, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
         TweenService:Create(TitleLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
         TweenService:Create(ContentLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
         task.wait(0.3)
