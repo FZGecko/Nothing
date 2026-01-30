@@ -1766,6 +1766,7 @@ function Library:CreateCustomWindow(options)
     local position = options.Position or UDim2.fromScale(0.5, 0.5)
     local title = options.Title
     local draggable = options.Draggable
+    local titleAlignment = options.TitleAlignment or Enum.TextXAlignment.Left
     if draggable == nil then draggable = true end
 
     local WindowFrame = Utility.Create("Frame", {
@@ -1796,16 +1797,24 @@ function Library:CreateCustomWindow(options)
     local Content = WindowFrame
 
     if title then
+        local labelPos = UDim2.new(0, 10, 0, 0)
+        local labelSize = UDim2.new(1, -10, 0, 25)
+        
+        if titleAlignment == Enum.TextXAlignment.Center then
+            labelPos = UDim2.new(0, 0, 0, 0)
+            labelSize = UDim2.new(1, 0, 0, 25)
+        end
+
         Utility.Create("TextLabel", {
             Parent = WindowFrame,
-            Size = UDim2.new(1, -10, 0, 25),
-            Position = UDim2.new(0, 10, 0, 0),
+            Size = labelSize,
+            Position = labelPos,
             BackgroundTransparency = 1,
             Text = title,
             TextColor3 = self.Theme.Text,
             TextSize = 12,
             Font = Enum.Font.GothamBold,
-            TextXAlignment = Enum.TextXAlignment.Left
+            TextXAlignment = titleAlignment
         }, { TextColor3 = "Text" })
 
         Content = Utility.Create("Frame", {
