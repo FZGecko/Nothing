@@ -2557,6 +2557,21 @@ function Library:CreateColorPickerWindow()
     Utility.Create("UIStroke", { Parent = AlphaCursor, Color = Color3.new(0, 0, 0), Thickness = 1 })
     self.CP_AlphaCursor = AlphaCursor
 
+    local AlphaInput = Utility.Create("TextBox", {
+        Parent = CP,
+        Size = UDim2.new(0, 35, 0, 16),
+        Position = UDim2.new(0, 175, 0, 202),
+        BackgroundColor3 = self.Theme.Sidebar,
+        Text = "0.00",
+        TextColor3 = self.Theme.Text,
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
+        ClearTextOnFocus = false
+    }, { BackgroundColor3 = "Sidebar", TextColor3 = "Text" })
+    Utility.Create("UIStroke", { Parent = AlphaInput, Color = self.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
+    Utility.Create("UICorner", { Parent = AlphaInput, CornerRadius = UDim.new(0, 4) })
+    self.CP_AlphaInput = AlphaInput
+
     local HexInput = Utility.Create("TextBox", {
         Parent = CP,
         Size = UDim2.new(0, 60, 0, 20),
@@ -2678,6 +2693,7 @@ function Library:CreateColorPickerWindow()
         self.CP_SVCursor.BackgroundColor3 = color
         self.CP_HueCursor.Position = UDim2.new(0, 0, 1 - h, 0)
         self.CP_AlphaCursor.Position = UDim2.new(alpha, 0, 0, 0)
+        self.CP_AlphaInput.Text = string.format("%.2f", alpha)
         self.CP_SpeedFill.Size = UDim2.new(speed / 5, 0, 1, 0)
         self.CP_SpeedLabel.Text = string.format("Speed: %.1f", speed)
 
@@ -2756,6 +2772,17 @@ function Library:CreateColorPickerWindow()
         else
             self:Notify({Title="Color Error", Content="Invalid Hex code.", Duration=5})
             self.CP_Hex.Text = Utility.ToHex(self.CurrentPickerState.Color)
+        end
+    end)
+
+    self.CP_AlphaInput.FocusLost:Connect(function()
+        if not self.CurrentPickerState then return end
+        local n = tonumber(self.CP_AlphaInput.Text)
+        if n then
+            self.CurrentPickerState.Transparency = math.clamp(n, 0, 1)
+            UpdatePickerFromInput()
+        else
+            self.CP_AlphaInput.Text = string.format("%.2f", self.CurrentPickerState.Transparency or 0)
         end
     end)
 
