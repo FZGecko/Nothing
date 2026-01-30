@@ -1304,7 +1304,7 @@ function Section:AddKeybind(options)
         self.Window.Library:UpdateKeybind(bindID, name, newBind, true)
     end, self.Window.Library.Theme, self.Window.Library)
     
-    AttachBindTrigger(BindBtn, GetBind, callback, self.Window.Library)
+    AttachBindTrigger(BindBtn, GetBind, callback, nil, self.Window.Library)
     
     if currentBind then
         self.Window.Library:UpdateKeybind(bindID, name, currentBind, true)
