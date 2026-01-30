@@ -272,10 +272,11 @@ local function AttachTooltip(parent, text, library)
     end)
 end
 
-local function AttachBindTrigger(button, getBindFunc, callback, library)
+local function AttachBindTrigger(button, getBindFunc, callbackBegin, callbackEnd, library)
     local hook = {
         GetBind = getBindFunc,
-        Callback = callback
+        CallbackBegin = callbackBegin,
+        CallbackEnd = callbackEnd
     }
     table.insert(library.BindHooks, hook)
     button.Destroying:Connect(function()
@@ -574,6 +575,7 @@ function Section:AddToggle(options)
     local extra_color = options.Color
     local extra_bind = options.Keybind
     local flag = options.Flag
+    local mode_flag = extra_bind and extra_bind.ModeFlag
     local bindID = Utility.RandomString(10)
 
     local ToggleFrame = Utility.Create("Frame", {
@@ -774,7 +776,25 @@ function Section:AddToggle(options)
             self.Window.Library:UpdateKeybind(bindID, name, newBind, state)
         end, self.Window.Library.Theme, self.Window.Library)
 
-        AttachBindTrigger(BindBtn, GetBind, function() SetState(not state) end, self.Window.Library)
+        AttachBindTrigger(BindBtn, GetBind, 
+            function() -- Input Began
+                local mode = "Toggle"
+                if mode_flag and self.Window.Library.Flags[mode_flag] then
+                    mode = self.Window.Library.Flags[mode_flag]
+                end
+                if mode == "Toggle" then
+                    SetState(not state)
+                elseif mode == "Hold" then
+                    SetState(true)
+                end
+            end,
+            function() -- Input Ended
+                local mode = (mode_flag and self.Window.Library.Flags[mode_flag]) or "Toggle"
+                if mode == "Hold" then
+                    SetState(false)
+                end
+            end, 
+        self.Window.Library)
 
         if currentBind then
             self.Window.Library:UpdateKeybind(bindID, name, currentBind, state)
@@ -1555,7 +1575,7 @@ function Library.new(options)
                 local safeToPress = (isKeyboard and not UserInputService:GetFocusedTextBox()) or (not isKeyboard and not gameProcessed)
                 if safeToPress then
                     if input.KeyCode == bind or input.UserInputType == bind then
-                        Utility.pcallNotify(self, hook.Callback, bind)
+                        Utility.pcallNotify(self, hook.CallbackBegin, bind)
                     end
                 end
             end
@@ -1579,6 +1599,14 @@ function Library.new(options)
             self.DraggingFrame = nil
             self.DraggingSlider = nil
             self.DraggingColor = nil
+        end
+        
+        -- Handle Bind Releases
+        for _, hook in ipairs(self.BindHooks) do
+            local bind = hook.GetBind()
+            if bind and (input.KeyCode == bind or input.UserInputType == bind) then
+                Utility.pcallNotify(self, hook.CallbackEnd, bind)
+            end
         end
     end))
     
@@ -2877,9 +2905,10 @@ function Library:SaveConfig(name)
     
     for k, v in pairs(self.Theme) do data.Theme[k] = Utility.ColorToTable(v) end
     
-    if self.MainWindow and self.MainWindow.Root then
-        data.Positions.Main = Utility.UDim2ToTable(self.MainWindow.Root.Position)
-    end
+    -- Saving Extra Windows (Excluding Main as requested)
+    if self.Watermark then data.Positions.Watermark = Utility.UDim2ToTable(self.Watermark.Position) end
+    if self.KeybindFrame then data.Positions.KeybindList = Utility.UDim2ToTable(self.KeybindFrame.Position) end
+    if self.InfoWindow then data.Positions.InfoWindow = Utility.UDim2ToTable(self.InfoWindow.Position) end
     
     for winName, winFrame in pairs(self.CustomWindows) do
         data.Positions[winName] = Utility.UDim2ToTable(winFrame.Position)
@@ -2910,9 +2939,16 @@ function Library:LoadConfig(name)
         
         -- Load Positions
         if data.Positions then
-            if data.Positions.Main and self.MainWindow and self.MainWindow.Root then
-                self.MainWindow.Root.Position = Utility.TableToUDim2(data.Positions.Main)
+            if data.Positions.Watermark and self.Watermark then
+                self.Watermark.Position = Utility.TableToUDim2(data.Positions.Watermark)
             end
+            if data.Positions.KeybindList and self.KeybindFrame then
+                self.KeybindFrame.Position = Utility.TableToUDim2(data.Positions.KeybindList)
+            end
+            if data.Positions.InfoWindow and self.InfoWindow then
+                self.InfoWindow.Position = Utility.TableToUDim2(data.Positions.InfoWindow)
+            end
+            
             for winName, pos in pairs(data.Positions) do
                 if winName ~= "Main" and self.CustomWindows[winName] then
                     self.CustomWindows[winName].Position = Utility.TableToUDim2(pos)
