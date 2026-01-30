@@ -1,7 +1,11 @@
 -- loadstring(game:HttpGet("https://raw.githubusercontent.com/FZGecko/Nothing/refs/heads/main/PrivateLibrary.lua"))()
 -- main.lua
 local function GetSafeService(service_name)
-    return (cloneref and cloneref(game:GetService(service_name))) or game:GetService(service_name)
+    local service = game:GetService(service_name)
+    if cloneref and type(cloneref) == "function" then
+        return cloneref(service)
+    end
+    return service
 end
 
 local UserInputService = GetSafeService("UserInputService")
@@ -29,9 +33,16 @@ Library.Rainbows = {}
 local Utility = {}
 
 -- [Optimization] Cached TweenInfos to prevent object churning
-local TI_01 = TweenInfo.new(0.1)
-local TI_02 = TweenInfo.new(0.2)
-local TI_QuadOut = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local function SafeTweenInfo(t, s, d)
+    if TweenInfo and TweenInfo.new then
+        return TweenInfo.new(t, s, d)
+    end
+    return nil
+end
+
+local TI_01 = SafeTweenInfo(0.1)
+local TI_02 = SafeTweenInfo(0.2)
+local TI_QuadOut = (Enum and Enum.EasingStyle) and SafeTweenInfo(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out) or nil
 
 function Utility.RandomString(length)
     local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -90,15 +101,17 @@ function Utility.AddRowHover(frame, theme)
     frame:SetAttribute("ThemeTag_BackgroundColor3", "Sidebar")
 
     -- [Optimization] Create tweens once, reuse them.
-    local tIn = TweenService:Create(frame, TI_02, { BackgroundTransparency = 0 })
-    local tOut = TweenService:Create(frame, TI_02, { BackgroundTransparency = 1 })
+    if TI_02 then
+        local tIn = TweenService:Create(frame, TI_02, { BackgroundTransparency = 0 })
+        local tOut = TweenService:Create(frame, TI_02, { BackgroundTransparency = 1 })
 
-    frame.MouseEnter:Connect(function()
-        tIn:Play()
-    end)
-    frame.MouseLeave:Connect(function()
-        tOut:Play()
-    end)
+        frame.MouseEnter:Connect(function() tIn:Play() end)
+        frame.MouseLeave:Connect(function() tOut:Play() end)
+    else
+        -- Fallback if TweenInfo failed
+        frame.MouseEnter:Connect(function() frame.BackgroundTransparency = 0 end)
+        frame.MouseLeave:Connect(function() frame.BackgroundTransparency = 1 end)
+    end
 end
 
 function Utility.SafeSave(data)
