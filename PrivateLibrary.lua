@@ -532,12 +532,22 @@ function Section:AddButton(options)
     options = options or {}
     local name = options.Name or "Button"
     local callback = options.Callback or function() end
+    local extra_bind = options.Keybind
+    local bindID = Utility.RandomString(10)
+
+    local ButtonFrame = Utility.Create("Frame", {
+        Name = "Button",
+        Parent = self.Container,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 30)
+    })
+    Utility.AddRowHover(ButtonFrame, self.Window.Library.Theme)
 
     local Button = Utility.Create("TextButton", {
-        Name = Utility.RandomString(6),
-        Parent = self.Container,
+        Name = "MainBtn",
+        Parent = ButtonFrame,
         BackgroundColor3 = self.Window.Library.Theme.Sidebar,
-        Size = UDim2.new(1, 0, 0, 30),
+        Size = extra_bind and UDim2.new(1, -80, 1, 0) or UDim2.new(1, 0, 1, 0),
         Text = name,
         TextColor3 = self.Window.Library.Theme.Text,
         Font = Enum.Font.Gotham,
@@ -580,8 +590,38 @@ function Section:AddButton(options)
     Button.MouseButton1Click:Connect(function() Utility.pcallNotify(self.Window.Library, callback) end)
     
     AttachTooltip(Button, options.Description, self.Window.Library)
+
+    if extra_bind then
+        local currentBind = extra_bind.Default
+        local bind_cb = extra_bind.Callback or function() end
+        local bind_flag = extra_bind.Flag
+
+        local BindBtn = Utility.Create("TextButton", {
+            Name = "Keybind",
+            Parent = ButtonFrame,
+            Size = UDim2.new(0, 75, 1, 0),
+            Position = UDim2.new(1, -75, 0, 0),
+            BackgroundColor3 = self.Window.Library.Theme.Sidebar,
+            Text = (not currentBind and "None") or (currentBind.Name == "MouseButton1" and "M1") or (currentBind.Name == "MouseButton2" and "M2") or (currentBind.Name == "MouseButton3" and "M3") or currentBind.Name,
+            TextColor3 = self.Window.Library.Theme.TextDim,
+            TextSize = 11,
+            Font = Enum.Font.Gotham,
+            AutoButtonColor = false
+        }, { BackgroundColor3 = "Sidebar", TextColor3 = "TextDim" })
+        Utility.Create("UICorner", { Parent = BindBtn, CornerRadius = UDim.new(0, 4) })
+        Utility.Create("UIStroke", { Parent = BindBtn, Color = self.Window.Library.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
+
+        local GetBind = AttachBindLogic(BindBtn, currentBind, function(newBind)
+            currentBind = newBind
+            if bind_flag then self.Window.Library.Flags[bind_flag] = (newBind and newBind.Name) or nil end
+            Utility.pcallNotify(self.Window.Library, bind_cb, newBind)
+            self.Window.Library:UpdateKeybind(bindID, name, newBind, false) -- False because buttons don't have "Active" state
+        end, self.Window.Library.Theme, self.Window.Library)
+
+        AttachBindTrigger(BindBtn, GetBind, function() Utility.pcallNotify(self.Window.Library, callback) end, nil, self.Window.Library)
+    end
     
-    return Button
+    return ButtonFrame
 end
 
 function Section:AddToggle(options)
@@ -2567,7 +2607,6 @@ function Library:CreateColorPickerWindow()
     self.CP_SpeedLabel = SpeedLabel
 
     local heartbeat = RunService.Heartbeat:Connect(function()
-        if not self.MainWindow or not self.MainWindow.Root.Visible then return end
         for state, callback in pairs(self.Rainbows) do
             if state.Rainbow then
                 local hue = (tick() * state.Speed) % 1
