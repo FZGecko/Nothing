@@ -427,6 +427,7 @@ function Tab:AddSection(name, side)
         Window = self.Window,
         Page = self.Page,
         Container = nil
+        Root = nil -- [Feature] Expose Root for visibility toggling
     }, Section)
 
     local SectionFrame = Utility.Create("Frame", {
@@ -497,6 +498,7 @@ function Tab:AddSection(name, side)
         PaddingRight = UDim.new(0, 10)
     })
     
+    section.Root = SectionFrame
     local ListLayout = Utility.Create("UIListLayout", {
         Parent = section.Container,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -633,6 +635,7 @@ function Section:AddToggle(options)
     local extra_bind = options.Keybind
     local flag = options.Flag
     local mode_flag = extra_bind and extra_bind.ModeFlag
+    local label_callback = options.CallbackLabel -- [Feature] Separate callback for clicking the text
     local bindID = Utility.RandomString(10)
 
     local ToggleFrame = Utility.Create("Frame", {
@@ -664,7 +667,7 @@ function Section:AddToggle(options)
         Padding = UDim.new(0, 8)
     })
 
-    local Label = Utility.Create("TextLabel", {
+    local Label = Utility.Create("TextButton", { -- [Feature] Changed to TextButton for interaction
         Parent = ToggleFrame,
         Size = UDim2.new(1, -100, 1, 0),
         Position = UDim2.new(0, 5, 0, 0),
@@ -673,7 +676,8 @@ function Section:AddToggle(options)
         TextColor3 = self.Window.Library.Theme.Text,
         TextSize = 12,
         Font = Enum.Font.Gotham,
-        TextXAlignment = Enum.TextXAlignment.Left
+        TextXAlignment = Enum.TextXAlignment.Left,
+        AutoButtonColor = false
     }, { TextColor3 = "Text" })
     
     AttachTooltip(Label, options.Description, self.Window.Library)
@@ -733,6 +737,10 @@ function Section:AddToggle(options)
     SwitchContainer.MouseButton1Click:Connect(function()
         SetState(not state)
     end)
+
+    if label_callback then
+        Label.MouseButton1Click:Connect(function() Utility.pcallNotify(self.Window.Library, label_callback) end)
+    end
     
     if flag then
         self.Window.Library.Flags[flag] = state
