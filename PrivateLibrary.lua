@@ -1657,7 +1657,7 @@ function Library.new(options)
     self.Flags = {}
     self.BindHooks = {}
     self.ConfigRegistry = {}
-    self.NotificationsEnabled = false
+    self.NotificationsEnabled = true
     self.CustomWindows = {}
     self.NotificationTransparency = 0.1
     self.NotificationAnchorTransparency = 0.5
@@ -2415,6 +2415,11 @@ function Library:CreateLoader(options)
             if libraryInstance.MainWindow and libraryInstance.MainWindow.Root then
                 libraryInstance.MainWindow.Root.Visible = true
                 TweenService:Create(libraryInstance.MainWindow.Root, TweenInfo.new(0.5), { GroupTransparency = 0 }):Play()
+                
+                if libraryInstance.NotificationsEnabled then
+                    libraryInstance.NotificationHolder.BackgroundTransparency = libraryInstance.NotificationAnchorTransparency
+                    libraryInstance.NotificationHolderTitle.Visible = true
+                end
             end
         end
     }
