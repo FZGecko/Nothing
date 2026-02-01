@@ -1318,7 +1318,7 @@ function Section:AddDropdown(options)
     end
 
     if flag then
-        self.Window.Library.Flags[flag] = default
+        self.Window.Library.Flags[flag] = multi and state.multi or state.single
         self.Window.Library.ConfigRegistry[flag] = { 
             Set = function(val) 
                 if multi then
