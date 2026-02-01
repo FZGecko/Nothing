@@ -28,7 +28,7 @@ local Library = {}
 Library.__index = Library
 Library.Version = "1.0.0"
 Library.Keybinds = {}
-Library.Rainbows = {}
+Library.Rainbows = setmetatable({}, {__mode = "k"}) -- [Optimization] Weak keys to prevent memory leaks
 Library.ThemeObjects = setmetatable({}, {__mode = "k"}) -- [Optimization] Registry for themed objects
 
 local Utility = {}
@@ -67,7 +67,6 @@ function Utility.Create(instanceType, properties, themeBindings)
     end
     if themeBindings then
         for property, themeKey in pairs(themeBindings) do
-            -- instance:SetAttribute("ThemeTag_" .. property, themeKey) -- Removed attribute scanning
             if not Library.ThemeObjects[instance] then Library.ThemeObjects[instance] = {} end
             Library.ThemeObjects[instance][property] = themeKey
             -- Apply immediately if theme exists
@@ -580,11 +579,6 @@ function Section:AddButton(options)
     }, { BackgroundColor3 = "Sidebar", TextColor3 = "Text" })
     Utility.Create("UICorner", { Parent = Button, CornerRadius = UDim.new(0, 4) })
     
-    Utility.Create("UIGradient", {
-        Parent = Button,
-        Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(0.8,0.8,0.8)),
-        Rotation = 90
-    })
     
     local Stroke = Utility.Create("UIStroke", {
         Parent = Button,
@@ -594,13 +588,15 @@ function Section:AddButton(options)
     }, { Color = "Outline" })
 
     Button.MouseEnter:Connect(function()
-        TweenService:Create(Button, TI_02, { BackgroundColor3 = self.Window.Library.Theme.Outline, BackgroundTransparency = 0.2 }):Play()
-        TweenService:Create(Stroke, TI_02, { Color = self.Window.Library.Theme.Accent }):Play()
+        Button.BackgroundColor3 = self.Window.Library.Theme.Outline
+        Button.BackgroundTransparency = 0.2
+        Stroke.Color = self.Window.Library.Theme.Accent
     end)
 
     Button.MouseLeave:Connect(function()
-        TweenService:Create(Button, TI_02, { BackgroundColor3 = self.Window.Library.Theme.Sidebar, BackgroundTransparency = 0 }):Play()
-        TweenService:Create(Stroke, TI_02, { Color = self.Window.Library.Theme.Outline }):Play()
+        Button.BackgroundColor3 = self.Window.Library.Theme.Sidebar
+        Button.BackgroundTransparency = 0
+        Stroke.Color = self.Window.Library.Theme.Outline
     end)
     
     Button.MouseButton1Down:Connect(function()
@@ -725,12 +721,6 @@ function Section:AddToggle(options)
     Utility.Create("UIStroke", { Parent = Switch, Color = self.Window.Library.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
     Utility.Create("UICorner", { Parent = Switch, CornerRadius = UDim.new(1, 0) })
     
-    Utility.Create("UIGradient", {
-        Parent = Switch,
-        Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(0.7,0.7,0.7)),
-        Rotation = 90
-    })
-    
     local Knob = Utility.Create("Frame", {
         Parent = Switch,
         Size = UDim2.new(0, 16, 0, 16),
@@ -740,7 +730,7 @@ function Section:AddToggle(options)
     }, { BackgroundColor3 = state and "Text" or "TextDim" })
     Utility.Create("UICorner", { Parent = Knob, CornerRadius = UDim.new(1, 0) })
 
-    local function SetState(newState)
+    local function SetState(newState, silent)
         state = newState
         local targetPos = state and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
         local targetColor = state and self.Window.Library.Theme.Accent or self.Window.Library.Theme.Background
@@ -755,7 +745,9 @@ function Section:AddToggle(options)
         Library.ThemeObjects[Knob]["BackgroundColor3"] = state and "Text" or "TextDim"
         
         if flag then self.Window.Library.Flags[flag] = state end
-        Utility.pcallNotify(self.Window.Library, callback, state)
+        if not silent then
+            Utility.pcallNotify(self.Window.Library, callback, state)
+        end
         self.Window.Library:UpdateKeybind(bindID, name, extra_bind and extra_bind.Default, state)
     end
 
@@ -969,14 +961,16 @@ function Section:AddSlider(options)
 
     local dragging = false
 
-    local function SetValue(v)
+    local function SetValue(v, silent)
         local n = math.clamp(v, min, max)
         n = math.floor(n * (10 ^ decimals)) / (10 ^ decimals)
         currentValue = n
         ValueLabel.Text = tostring(n)
         Fill.Size = UDim2.new((n - min) / (max - min), 0, 1, 0)
         if flag then self.Window.Library.Flags[flag] = n end
-        Utility.pcallNotify(self.Window.Library, callback, n)
+        if not silent then
+            Utility.pcallNotify(self.Window.Library, callback, n)
+        end
     end
     
     local function Update(input)
@@ -1066,9 +1060,11 @@ function Section:AddInput(options)
     Utility.Create("UICorner", { Parent = InputBox, CornerRadius = UDim.new(0, 4) })
     Utility.Create("UIStroke", { Parent = InputBox, Color = self.Window.Library.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
     
-    local function Update(text)
+    local function Update(text, silent)
         if flag then self.Window.Library.Flags[flag] = text end
-        Utility.pcallNotify(self.Window.Library, callback, text)
+        if not silent then
+            Utility.pcallNotify(self.Window.Library, callback, text)
+        end
     end
 
     InputBox.FocusLost:Connect(function()
@@ -1078,9 +1074,9 @@ function Section:AddInput(options)
     if flag then
         self.Window.Library.Flags[flag] = default
         self.Window.Library.ConfigRegistry[flag] = {
-            Set = function(val)
+            Set = function(val, silent)
                 InputBox.Text = tostring(val)
-                Update(tostring(val))
+                Update(tostring(val), silent)
             end,
             Type = "Input"
         }
@@ -1150,11 +1146,6 @@ function Section:AddDropdown(options)
     }, { BackgroundColor3 = "Sidebar", TextColor3 = "Text" })
     Utility.Create("UICorner", { Parent = Header, CornerRadius = UDim.new(0, 4) })
     local Stroke = Utility.Create("UIStroke", { Parent = Header, Color = self.Window.Library.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
-    Utility.Create("UIGradient", {
-        Parent = Header,
-        Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(0.9,0.9,0.9)),
-        Rotation = 90
-    })
 
     local Arrow = Utility.Create("ImageLabel", {
         Parent = Header,
@@ -1168,12 +1159,12 @@ function Section:AddDropdown(options)
     }, { ImageColor3 = "TextDim" })
 
     Header.MouseEnter:Connect(function()
-        TweenService:Create(Header, TweenInfo.new(0.2), { BackgroundColor3 = self.Window.Library.Theme.Outline }):Play()
-        TweenService:Create(Stroke, TweenInfo.new(0.2), { Color = self.Window.Library.Theme.Accent }):Play()
+        Header.BackgroundColor3 = self.Window.Library.Theme.Outline
+        Stroke.Color = self.Window.Library.Theme.Accent
     end)
     Header.MouseLeave:Connect(function()
-        TweenService:Create(Header, TweenInfo.new(0.2), { BackgroundColor3 = self.Window.Library.Theme.Sidebar }):Play()
-        TweenService:Create(Stroke, TweenInfo.new(0.2), { Color = self.Window.Library.Theme.Outline }):Play()
+        Header.BackgroundColor3 = self.Window.Library.Theme.Sidebar
+        Stroke.Color = self.Window.Library.Theme.Outline
     end)
 
     local ListContainer = Utility.Create("Frame", {
@@ -1331,7 +1322,7 @@ function Section:AddDropdown(options)
     if flag then
         self.Window.Library.Flags[flag] = multi and state.multi or state.single
         self.Window.Library.ConfigRegistry[flag] = { 
-            Set = function(val) 
+            Set = function(val, silent) 
                 if multi then
                     state.multi = val
                 else
@@ -1390,12 +1381,6 @@ function Section:AddKeybind(options)
     }, { BackgroundColor3 = "Sidebar", TextColor3 = "TextDim" })
     Utility.Create("UICorner", { Parent = BindBtn, CornerRadius = UDim.new(0, 4) })
     Utility.Create("UIStroke", { Parent = BindBtn, Color = self.Window.Library.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
-    
-    Utility.Create("UIGradient", {
-        Parent = BindBtn,
-        Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(0.9,0.9,0.9)),
-        Rotation = 90
-    })
 
     local GetBind = AttachBindLogic(BindBtn, currentBind, function(newBind)
         currentBind = newBind
@@ -1413,7 +1398,7 @@ function Section:AddKeybind(options)
     if flag then
         self.Window.Library.Flags[flag] = (currentBind and currentBind.Name) or nil
         self.Window.Library.ConfigRegistry[flag] = { 
-            Set = function(val) 
+            Set = function(val, silent) 
                 local key
                 pcall(function() key = Enum.KeyCode[val] end)
                 if not key then pcall(function() key = Enum.UserInputType[val] end) end
@@ -1502,7 +1487,7 @@ function Section:AddColorPicker(options)
         Thickness = 1
     }, { Color = "Outline" })
 
-    local function UpdateColor(c, t, r, s)
+    local function UpdateColor(c, t, r, s, silent)
         colorState.Color = c or colorState.Color
         colorState.Transparency = t or 0
         if r ~= nil then colorState.Rainbow = r end
@@ -1512,7 +1497,9 @@ function Section:AddColorPicker(options)
         if flag then
             self.Window.Library.Flags[flag] = { Color = Utility.ColorToTable(c), Transparency = t, Rainbow = r, Speed = s }
         end
-        Utility.pcallNotify(self.Window.Library, callback, c, t, r, s)
+        if not silent then
+            Utility.pcallNotify(self.Window.Library, callback, c, t, r, s)
+        end
     end
 
     AttachColorLogic(Preview, ColorFill, colorState, self.Window.Library, UpdateColor)
@@ -1520,7 +1507,7 @@ function Section:AddColorPicker(options)
     if flag then
         -- [Fix] Initialize flag immediately
         self.Window.Library.Flags[flag] = { Color = Utility.ColorToTable(default), Transparency = transparency, Rainbow = false, Speed = 1 }
-        self.Window.Library.ConfigRegistry[flag] = { Set = function(v) UpdateColor(Utility.TableToColor(v.Color), v.Transparency, v.Rainbow, v.Speed) end, Type = "Color" }
+        self.Window.Library.ConfigRegistry[flag] = { Set = function(v, silent) UpdateColor(Utility.TableToColor(v.Color), v.Transparency, v.Rainbow, v.Speed, silent) end, Type = "Color" }
     end
 
     return PickerFrame
@@ -1667,6 +1654,7 @@ function Library.new(options)
     self.WatermarkTransparency = 0
     self.MainTransparency = 0
     self.RainbowConnection = nil
+    self._dead = false
     self.Utility = Utility
 
     -- Centralized Input Handling
@@ -1754,7 +1742,7 @@ function Library:CreateWatermark()
     self.Janitor:Add(function() active = false end)
 
     task.spawn(function()
-        while active and Watermark.Parent do
+        while not self._dead and active and Watermark.Parent do
             if not Watermark.Visible then
                 task.wait(1)
                 continue
@@ -2137,7 +2125,7 @@ function Library:CreateInfoWindow()
     self.Janitor:Add(function() active = false end)
 
     task.spawn(function()
-        while active and InfoFrame.Parent do
+        while not self._dead and active and InfoFrame.Parent do
             if not InfoFrame.Visible then
                 task.wait(1)
                 continue
@@ -2173,10 +2161,18 @@ function Library:KeySystem(options)
     local File = Folder .. "/" .. (self.ID or "default") .. "_auth.bin" -- [Security] Randomized/ID-based filename
     
     if type(Keys) == "string" then Keys = {Keys} end
+
+    local function Hash(str)
+        local h = 0
+        for i = 1, #str do
+            h = (h * 31 + string.byte(str, i)) % 104729
+        end
+        return tostring(h)
+    end
     
     local function Validate(input)
         for _, key in pairs(Keys) do
-            if input == key then return true end
+            if input == Hash(key) then return true end
         end
         return false
     end
@@ -2290,9 +2286,9 @@ function Library:KeySystem(options)
     end
     
     local SubmitBtn = CreateBtn("Submit", UDim2.new(Link and 0.48 or 1, 0, 1, 0), UDim2.new(0, 0, 0, 0), function()
-        if Validate(Input.Text) then
+        if Validate(Hash(Input.Text)) then
             if not isfolder(Folder) then makefolder(Folder) end
-            writefile(File, Input.Text)
+            writefile(File, Hash(Input.Text))
             self:Notify({ Title = "Success", Content = "Key Validated!", Duration = 3 })
             KeyFrame:Destroy()
             Callback()
@@ -2645,11 +2641,6 @@ function Library:CreateColorPickerWindow()
     }, { BackgroundColor3 = "Sidebar", TextColor3 = "TextDim" })
     Utility.Create("UIStroke", { Parent = RainbowToggle, Color = self.Theme.Outline, Thickness = 1 }, { Color = "Outline" })
     Utility.Create("UICorner", { Parent = RainbowToggle, CornerRadius = UDim.new(0, 4) })
-    Utility.Create("UIGradient", {
-        Parent = RainbowToggle,
-        Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(0.8,0.8,0.8)),
-        Rotation = 90
-    })
     self.CP_Rainbow = RainbowToggle
 
     local SpeedSlider = Utility.Create("TextButton", {
@@ -2964,10 +2955,14 @@ function Library:ShowTooltip(text)
     
     if self.TooltipConnection then self.TooltipConnection:Disconnect() end
     -- [Optimization] Use InputChanged instead of RenderStepped
+    local lastUpdate = 0
     self.TooltipConnection = UserInputService.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
-            local mouse = UserInputService:GetMouseLocation()
-            self.Tooltip.Position = UDim2.fromOffset(mouse.X + 15, mouse.Y + 15)
+            if tick() - lastUpdate > 0.08 then
+                lastUpdate = tick()
+                local mouse = UserInputService:GetMouseLocation()
+                self.Tooltip.Position = UDim2.fromOffset(mouse.X + 15, mouse.Y + 15)
+            end
         end
     end)
 end
@@ -3125,7 +3120,7 @@ function Library:LoadConfig(name)
         local flags = data.Flags or data -- Support legacy format if exists
         for flag, value in pairs(flags) do
             if self.ConfigRegistry[flag] then
-                self.ConfigRegistry[flag].Set(value)
+                self.ConfigRegistry[flag].Set(value, true) -- [Optimization] Silent load
             end
         end
         self:Notify({ Title = "Config", Content = "Loaded " .. name, Duration = 3 })
@@ -3145,6 +3140,7 @@ function Library:GetConfigs()
 end
 
 function Library:Destroy()
+    self._dead = true
     if self.Gui then
         self.Gui:Destroy()
     end
