@@ -653,6 +653,7 @@ function Section:AddToggle(options)
     local extra_color2 = options.Color2
     local extra_bind = options.Keybind
     local flag = options.Flag
+    local currentBind = extra_bind and extra_bind.Default -- [Fix] Lift scope so SetState sees updates
     local mode_flag = extra_bind and extra_bind.ModeFlag
     local label_callback = options.CallbackLabel -- [Feature] Separate callback for clicking the text
     local bindID = Utility.RandomString(10)
@@ -748,7 +749,7 @@ function Section:AddToggle(options)
         if not silent then
             Utility.pcallNotify(self.Window.Library, callback, state)
         end
-        self.Window.Library:UpdateKeybind(bindID, name, extra_bind and extra_bind.Default, state)
+        self.Window.Library:UpdateKeybind(bindID, name, currentBind, state) -- [Fix] Use dynamic currentBind
     end
 
     SwitchContainer.MouseButton1Click:Connect(function()
@@ -837,7 +838,6 @@ function Section:AddToggle(options)
     AddColorButton(extra_color2)
 
     if extra_bind then
-        local currentBind = extra_bind.Default
         local bind_cb = extra_bind.Callback or function() end
         local bind_flag = extra_bind.Flag
         
@@ -2997,7 +2997,15 @@ function Library:Toggle()
 end
 
 function Library:UpdateKeybind(id, name, key, state)
-    if not key then return end
+    -- [Fix] Handle unbinding/removal correctly
+    if not key or key == Enum.KeyCode.Unknown then
+        if self.Keybinds[id] then
+            self.Keybinds[id]:Destroy()
+            self.Keybinds[id] = nil
+        end
+        return
+    end
+    
     if not self.KeybindContainer then return end
     
     if not self.Keybinds[id] then
@@ -3018,10 +3026,6 @@ function Library:UpdateKeybind(id, name, key, state)
     Label.TextColor3 = state and self.Theme.Accent or self.Theme.TextDim
     if not Library.ThemeObjects[Label] then Library.ThemeObjects[Label] = {} end
     Library.ThemeObjects[Label]["TextColor3"] = state and "Accent" or "TextDim"
-    if not key or key == Enum.KeyCode.Unknown then
-        Label:Destroy()
-        self.Keybinds[id] = nil
-    end
 end
 
 function Library:SetTheme(themeName)
