@@ -29,7 +29,7 @@ Library.__index = Library
 Library.Version = "1.0.0"
 Library.Keybinds = {}
 Library.Rainbows = setmetatable({}, {__mode = "k"}) -- [Optimization] Weak keys to prevent memory leaks
-Library.ThemeObjects = setmetatable({}, {__mode = "k"}) -- [Optimization] Registry for themed objects
+Library.ThemeObjects = {} -- [Fix] Strong refs to ensure updates work (Manual cleanup via Destroying)
 
 local Utility = {}
 
@@ -67,7 +67,13 @@ function Utility.Create(instanceType, properties, themeBindings)
     end
     if themeBindings then
         for property, themeKey in pairs(themeBindings) do
-            if not Library.ThemeObjects[instance] then Library.ThemeObjects[instance] = {} end
+            if not Library.ThemeObjects[instance] then 
+                Library.ThemeObjects[instance] = {}
+                -- [Fix] Cleanup when instance is destroyed
+                instance.Destroying:Connect(function()
+                    Library.ThemeObjects[instance] = nil
+                end)
+            end
             Library.ThemeObjects[instance][property] = themeKey
             -- Apply immediately if theme exists
             if Library.Theme and Library.Theme[themeKey] then instance[property] = Library.Theme[themeKey] end
@@ -105,7 +111,13 @@ end
 function Utility.AddRowHover(frame, theme)
     frame.BackgroundColor3 = theme.Sidebar
     frame.BackgroundTransparency = 1
-    if not Library.ThemeObjects[frame] then Library.ThemeObjects[frame] = {} end
+    if not Library.ThemeObjects[frame] then 
+        Library.ThemeObjects[frame] = {} 
+        -- [Fix] Cleanup when instance is destroyed
+        frame.Destroying:Connect(function()
+            Library.ThemeObjects[frame] = nil
+        end)
+    end
     Library.ThemeObjects[frame]["BackgroundColor3"] = "Sidebar"
 
     -- [Optimization] Create tweens once, reuse them.
