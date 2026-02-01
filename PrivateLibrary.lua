@@ -1086,7 +1086,8 @@ function Section:AddDropdown(options)
     local name = options.Name or "Dropdown"
     local items = options.Items or {}
     local multi = options.Multi or false
-    local default = options.Default or (multi and {} or items[1])
+    local default = options.Default
+    if default == nil and multi then default = {} end
     local flag = options.Flag
     local callback = options.Callback or function() end
 
@@ -1199,7 +1200,7 @@ function Section:AddDropdown(options)
                 Header.Text = "  " .. table.concat(active, ", ")
             end
         else
-            Header.Text = "  " .. tostring(state.single)
+            Header.Text = "  " .. tostring(state.single or "None")
         end
     end
     UpdateText() -- Initial set
