@@ -29,6 +29,7 @@ Library.__index = Library
 Library.Version = "1.0.0"
 Library.Keybinds = {}
 Library.Rainbows = {}
+Library.ThemeObjects = setmetatable({}, {__mode = "k"}) -- [Optimization] Registry for themed objects
 
 local Utility = {}
 
@@ -66,7 +67,11 @@ function Utility.Create(instanceType, properties, themeBindings)
     end
     if themeBindings then
         for property, themeKey in pairs(themeBindings) do
-            instance:SetAttribute("ThemeTag_" .. property, themeKey)
+            -- instance:SetAttribute("ThemeTag_" .. property, themeKey) -- Removed attribute scanning
+            if not Library.ThemeObjects[instance] then Library.ThemeObjects[instance] = {} end
+            Library.ThemeObjects[instance][property] = themeKey
+            -- Apply immediately if theme exists
+            if Library.Theme and Library.Theme[themeKey] then instance[property] = Library.Theme[themeKey] end
         end
     end
     return instance
@@ -101,7 +106,8 @@ end
 function Utility.AddRowHover(frame, theme)
     frame.BackgroundColor3 = theme.Sidebar
     frame.BackgroundTransparency = 1
-    frame:SetAttribute("ThemeTag_BackgroundColor3", "Sidebar")
+    if not Library.ThemeObjects[frame] then Library.ThemeObjects[frame] = {} end
+    Library.ThemeObjects[frame]["BackgroundColor3"] = "Sidebar"
 
     -- [Optimization] Create tweens once, reuse them.
     if TI_02 then
@@ -423,12 +429,12 @@ function Tab:Activate()
     for _, t in ipairs(window.Tabs) do
         t.Page.Visible = false
         TweenService:Create(t.Button, TI_02, { TextColor3 = library.Theme.TextDim }):Play()
-        t.Button:SetAttribute("ThemeTag_TextColor3", "TextDim")
+        if not Library.ThemeObjects[t.Button] then Library.ThemeObjects[t.Button] = {} end Library.ThemeObjects[t.Button]["TextColor3"] = "TextDim"
         TweenService:Create(t.Indicator, TI_02, { BackgroundTransparency = 1 }):Play()
     end
     self.Page.Visible = true
     TweenService:Create(self.Button, TI_02, { TextColor3 = library.Theme.Text }):Play()
-    self.Button:SetAttribute("ThemeTag_TextColor3", "Text")
+    if not Library.ThemeObjects[self.Button] then Library.ThemeObjects[self.Button] = {} end Library.ThemeObjects[self.Button]["TextColor3"] = "Text"
     TweenService:Create(self.Indicator, TI_02, { BackgroundTransparency = 0 }):Play()
     library.ColorPickerWindow.Visible = false
     
@@ -743,8 +749,10 @@ function Section:AddToggle(options)
         TweenService:Create(Knob, TI_QuadOut, { Position = targetPos, BackgroundColor3 = targetKnobColor }):Play()
         TweenService:Create(Switch, TI_QuadOut, { BackgroundColor3 = targetColor }):Play()
         
-        Switch:SetAttribute("ThemeTag_BackgroundColor3", state and "Accent" or "Background")
-        Knob:SetAttribute("ThemeTag_BackgroundColor3", state and "Text" or "TextDim")
+        if not Library.ThemeObjects[Switch] then Library.ThemeObjects[Switch] = {} end
+        Library.ThemeObjects[Switch]["BackgroundColor3"] = state and "Accent" or "Background"
+        if not Library.ThemeObjects[Knob] then Library.ThemeObjects[Knob] = {} end
+        Library.ThemeObjects[Knob]["BackgroundColor3"] = state and "Text" or "TextDim"
         
         if flag then self.Window.Library.Flags[flag] = state end
         Utility.pcallNotify(self.Window.Library, callback, state)
@@ -1264,7 +1272,8 @@ function Section:AddDropdown(options)
                     state.multi[item] = not state.multi[item]
                     ItemBtn.TextColor3 = state.multi[item] and self.Window.Library.Theme.Accent or self.Window.Library.Theme.TextDim
                     UpdateText()
-                    ItemBtn:SetAttribute("ThemeTag_TextColor3", state.multi[item] and "Accent" or "TextDim")
+                    if not Library.ThemeObjects[ItemBtn] then Library.ThemeObjects[ItemBtn] = {} end
+                    Library.ThemeObjects[ItemBtn]["TextColor3"] = state.multi[item] and "Accent" or "TextDim"
                     if flag then self.Window.Library.Flags[flag] = state.multi end
                     Utility.pcallNotify(self.Window.Library, callback, state.multi)
                 else
@@ -1272,7 +1281,8 @@ function Section:AddDropdown(options)
                     for _, btn in pairs(ListContainer:GetChildren()) do
                         if btn:IsA("TextButton") then
                             btn.TextColor3 = (btn.Text == item) and self.Window.Library.Theme.Accent or self.Window.Library.Theme.TextDim
-                            btn:SetAttribute("ThemeTag_TextColor3", (btn.Text == item) and "Accent" or "TextDim")
+                            if not Library.ThemeObjects[btn] then Library.ThemeObjects[btn] = {} end
+                            Library.ThemeObjects[btn]["TextColor3"] = (btn.Text == item) and "Accent" or "TextDim"
                         end
                     end
                     UpdateText()
@@ -1656,6 +1666,7 @@ function Library.new(options)
     self.InfoTransparency = 0
     self.WatermarkTransparency = 0
     self.MainTransparency = 0
+    self.RainbowConnection = nil
     self.Utility = Utility
 
     -- Centralized Input Handling
@@ -1739,15 +1750,18 @@ function Library:CreateWatermark()
         Font = Enum.Font.GothamBold
     }, { TextColor3 = "Text" })
     
+    local active = true
+    self.Janitor:Add(function() active = false end)
+
     task.spawn(function()
-        while Watermark.Parent do
+        while active and Watermark.Parent do
             if not Watermark.Visible then
                 task.wait(1)
                 continue
             end
             local fps = math.floor(workspace:GetRealPhysicsFPS())
             local ping = 0
-            pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValueString():match("%d+")) end)
+            pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
             local time = os.date("%H:%M:%S")
             
             Label.Text = string.format("%s | Made by FZ | FPS: %d | Ping: %dms | %s", self.Name, fps, ping, time)
@@ -2112,20 +2126,26 @@ function Library:CreateInfoWindow()
         TextYAlignment = Enum.TextYAlignment.Top
     }, { TextColor3 = "TextDim" })
 
+    -- [Optimization] Cache static info once
+    local gameName = "Unknown"
     task.spawn(function()
-        while InfoFrame.Parent do
+        local success, result = pcall(function() return MarketplaceService:GetProductInfo(game.PlaceId) end)
+        if success and result then gameName = result.Name end
+    end)
+
+    local active = true
+    self.Janitor:Add(function() active = false end)
+
+    task.spawn(function()
+        while active and InfoFrame.Parent do
             if not InfoFrame.Visible then
                 task.wait(1)
                 continue
             end
-            local gameName = "Unknown"
-            local success, result = pcall(function() return MarketplaceService:GetProductInfo(game.PlaceId) end)
-            if success and result then gameName = result.Name end
 
             local fps = math.floor(workspace:GetRealPhysicsFPS())
             local ping = 0
-            local pingSuccess, pingResult = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValueString():match("%d+") end)
-            if pingSuccess and pingResult then ping = math.floor(pingResult) end
+            pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
 
             local time = os.date("%H:%M:%S")
             
@@ -2150,7 +2170,7 @@ function Library:KeySystem(options)
     local Keys = options.Keys or self.Keys or ""
     local Callback = options.Callback or function() end
     local Folder = self.ConfigFolder
-    local File = Folder .. "/key.data"
+    local File = Folder .. "/" .. (self.ID or "default") .. "_auth.bin" -- [Security] Randomized/ID-based filename
     
     if type(Keys) == "string" then Keys = {Keys} end
     
@@ -2665,21 +2685,30 @@ function Library:CreateColorPickerWindow()
     self.CP_SpeedFill = SpeedFill
     self.CP_SpeedLabel = SpeedLabel
 
-    local heartbeat = RunService.Heartbeat:Connect(function()
-        for state, callback in pairs(self.Rainbows) do
-            if state.Rainbow then
-                local hue = (tick() * state.Speed) % 1
-                local color = Color3.fromHSV(hue, 1, 1)
-                state.Color = color
-                Utility.pcallNotify(self, callback, color, state.Transparency, state.Rainbow, state.Speed)
-                if self.CurrentPickerState == state then
-                    self.CP_SV.BackgroundColor3 = color
-                    self.CP_Hex.Text = Utility.ToHex(color)
-                    self.CP_AlphaGradient.BackgroundColor3 = color
+    -- [Optimization] Conditional Heartbeat
+    function self:UpdateRainbowLoop()
+        if next(self.Rainbows) and not self.RainbowConnection then
+            self.RainbowConnection = RunService.Heartbeat:Connect(function()
+                for state, callback in pairs(self.Rainbows) do
+                    if state.Rainbow then
+                        local hue = (tick() * state.Speed) % 1
+                        local color = Color3.fromHSV(hue, 1, 1)
+                        state.Color = color
+                        Utility.pcallNotify(self, callback, color, state.Transparency, state.Rainbow, state.Speed)
+                        if self.CurrentPickerState == state then
+                            self.CP_SV.BackgroundColor3 = color
+                            self.CP_Hex.Text = Utility.ToHex(color)
+                            self.CP_AlphaGradient.BackgroundColor3 = color
+                        end
+                    end
                 end
-            end
+            end)
+            self.Janitor:Add(self.RainbowConnection)
+        elseif not next(self.Rainbows) and self.RainbowConnection then
+            self.RainbowConnection:Disconnect()
+            self.RainbowConnection = nil
         end
-    end)
+    end
 
     local function UpdatePickerFromInput()
         local state = self.CurrentPickerState
@@ -2715,6 +2744,7 @@ function Library:CreateColorPickerWindow()
         else
             self.Rainbows[state] = nil
         end
+        self:UpdateRainbowLoop()
     end
 
     self.CP_SV.InputBegan:Connect(function(input) 
@@ -2803,8 +2833,6 @@ function Library:CreateColorPickerWindow()
         self.CP_Rainbow.TextColor3 = self.CurrentPickerState.Rainbow and self.Theme.Accent or self.Theme.TextDim
         UpdatePickerFromInput()
     end, { TextColor3 = self.CurrentPickerState and self.CurrentPickerState.Rainbow and "Accent" or "TextDim" })
-
-    self.Janitor:Add(heartbeat)
 end
 
 function Library:Notify(options)
@@ -2815,6 +2843,13 @@ function Library:Notify(options)
     local force = options.Force or false
 
     if not self.NotificationsEnabled and not force then return end
+
+    -- [Optimization] Limit notifications
+    local activeNotes = self.NotificationHolder:GetChildren()
+    if #activeNotes >= 5 then
+        -- Remove oldest (first child usually)
+        for _, c in ipairs(activeNotes) do if c:IsA("Frame") then c:Destroy() break end end
+    end
 
     local Frame = Utility.Create("Frame", {
         Parent = self.NotificationHolder,
@@ -2928,9 +2963,12 @@ function Library:ShowTooltip(text)
     self.Tooltip.Visible = true
     
     if self.TooltipConnection then self.TooltipConnection:Disconnect() end
-    self.TooltipConnection = RunService.RenderStepped:Connect(function()
-        local mouse = UserInputService:GetMouseLocation()
-        self.Tooltip.Position = UDim2.fromOffset(mouse.X + 15, mouse.Y + 15)
+    -- [Optimization] Use InputChanged instead of RenderStepped
+    self.TooltipConnection = UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mouse = UserInputService:GetMouseLocation()
+            self.Tooltip.Position = UDim2.fromOffset(mouse.X + 15, mouse.Y + 15)
+        end
     end)
 end
 
@@ -2978,7 +3016,8 @@ function Library:UpdateKeybind(id, name, key, state)
     local Label = self.Keybinds[id]
     Label.Text = string.format("[%s] %s", (key.Name == "MouseButton1" and "M1") or (key.Name == "MouseButton2" and "M2") or (key.Name == "MouseButton3" and "M3") or key.Name, name)
     Label.TextColor3 = state and self.Theme.Accent or self.Theme.TextDim
-    Label:SetAttribute("ThemeTag_TextColor3", state and "Accent" or "TextDim")
+    if not Library.ThemeObjects[Label] then Library.ThemeObjects[Label] = {} end
+    Library.ThemeObjects[Label]["TextColor3"] = state and "Accent" or "TextDim"
     if not key or key == Enum.KeyCode.Unknown then
         Label:Destroy()
         self.Keybinds[id] = nil
@@ -2994,13 +3033,11 @@ function Library:SetTheme(themeName)
 end
 
 function Library:UpdateThemeObjects()
-    for _, obj in pairs(self.Gui:GetDescendants()) do
-        for attr, val in pairs(obj:GetAttributes()) do
-            if string.sub(attr, 1, 9) == "ThemeTag_" then
-                local prop = string.sub(attr, 10)
-                if self.Theme[val] then
-                    pcall(function() obj[prop] = self.Theme[val] end)
-                end
+    -- [Optimization] Use Registry instead of GetDescendants
+    for obj, bindings in pairs(self.ThemeObjects) do
+        for prop, themeKey in pairs(bindings) do
+            if self.Theme[themeKey] then
+                pcall(function() obj[prop] = self.Theme[themeKey] end)
             end
         end
     end
@@ -3012,10 +3049,10 @@ end
 
 function Library:SetThemeColor(key, color)
     self.Theme[key] = color
-    for _, obj in pairs(self.Gui:GetDescendants()) do
-        for attr, val in pairs(obj:GetAttributes()) do
-            if string.sub(attr, 1, 9) == "ThemeTag_" and val == key then
-                local prop = string.sub(attr, 10)
+    -- [Optimization] Use Registry
+    for obj, bindings in pairs(self.ThemeObjects) do
+        for prop, themeKey in pairs(bindings) do
+            if themeKey == key then
                 pcall(function() obj[prop] = color end)
             end
         end
