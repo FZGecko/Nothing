@@ -1202,6 +1202,7 @@ function Section:AddDropdown(options)
             for k, v in pairs(state.multi) do
                 if v then table.insert(active, k) end
             end
+            table.sort(active)
             
             if #active == 0 then
                 Header.Text = "  None"
@@ -1322,10 +1323,10 @@ function Section:AddDropdown(options)
     function DropdownController:Refresh(newItems)
         items = newItems or {}
         if multi then
-            state.multi = {}
-            for _, item in pairs(items) do state.multi[item] = false end
-        else
-            state.single = default -- Reset to default or nil? Keeping default for safety
+            -- [Fix] Preserve selection state during refresh (filtering)
+            for _, item in pairs(items) do 
+                if state.multi[item] == nil then state.multi[item] = false end
+            end
         end
         UpdateText()
         RebuildItems()
