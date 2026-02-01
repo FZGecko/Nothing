@@ -1741,23 +1741,27 @@ function Library:CreateWatermark()
     local active = true
     self.Janitor:Add(function() active = false end)
 
-    task.spawn(function()
-        while not self._dead and active and Watermark.Parent do
-            if not Watermark.Visible then
+    local function UpdateWatermark()
+        task.spawn(function()
+            while not self._dead and active and Watermark.Visible and Watermark.Parent do
+                local fps = math.floor(workspace:GetRealPhysicsFPS())
+                local ping = 0
+                pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
+                local time = os.date("%H:%M:%S")
+                
+                Label.Text = string.format("%s | Made by FZ | FPS: %d | Ping: %dms | %s", self.Name, fps, ping, time)
+                Watermark.Size = UDim2.fromOffset(TextService:GetTextSize(Label.Text, 12, Enum.Font.GothamBold, Vector2.new(1000, 24)).X + 20, 24)
+                
                 task.wait(1)
-                continue
             end
-            local fps = math.floor(workspace:GetRealPhysicsFPS())
-            local ping = 0
-            pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
-            local time = os.date("%H:%M:%S")
-            
-            Label.Text = string.format("%s | Made by FZ | FPS: %d | Ping: %dms | %s", self.Name, fps, ping, time)
-            Watermark.Size = UDim2.fromOffset(TextService:GetTextSize(Label.Text, 12, Enum.Font.GothamBold, Vector2.new(1000, 24)).X + 20, 24)
-            
-            task.wait(1)
-        end
+        end)
+    end
+
+    Watermark:GetPropertyChangedSignal("Visible"):Connect(function()
+        if Watermark.Visible then UpdateWatermark() end
     end)
+    
+    if Watermark.Visible then UpdateWatermark() end
     
     self.Watermark = Watermark
 end
@@ -2124,30 +2128,33 @@ function Library:CreateInfoWindow()
     local active = true
     self.Janitor:Add(function() active = false end)
 
-    task.spawn(function()
-        while not self._dead and active and InfoFrame.Parent do
-            if not InfoFrame.Visible then
+    local function UpdateInfo()
+        task.spawn(function()
+            while not self._dead and active and InfoFrame.Visible and InfoFrame.Parent do
+                local fps = math.floor(workspace:GetRealPhysicsFPS())
+                local ping = 0
+                pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
+
+                local time = os.date("%H:%M:%S")
+                
+                Content.Text = string.format(
+                    "Game: %s\nUser: %s\nFPS: %d  |  Ping: %d ms\nTime: %s",
+                    gameName,
+                    Players.LocalPlayer.Name,
+                    fps,
+                    ping,
+                    time
+                )
                 task.wait(1)
-                continue
             end
+        end)
+    end
 
-            local fps = math.floor(workspace:GetRealPhysicsFPS())
-            local ping = 0
-            pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
-
-            local time = os.date("%H:%M:%S")
-            
-            Content.Text = string.format(
-                "Game: %s\nUser: %s\nFPS: %d  |  Ping: %d ms\nTime: %s",
-                gameName,
-                Players.LocalPlayer.Name,
-                fps,
-                ping,
-                time
-            )
-            task.wait(1)
-        end
+    InfoFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+        if InfoFrame.Visible then UpdateInfo() end
     end)
+
+    if InfoFrame.Visible then UpdateInfo() end
 end
 
 function Library:KeySystem(options)
@@ -2288,7 +2295,9 @@ function Library:KeySystem(options)
     local SubmitBtn = CreateBtn("Submit", UDim2.new(Link and 0.48 or 1, 0, 1, 0), UDim2.new(0, 0, 0, 0), function()
         if Validate(Hash(Input.Text)) then
             if not isfolder(Folder) then makefolder(Folder) end
-            writefile(File, Hash(Input.Text))
+            task.delay(2, function()
+                writefile(File, Hash(Input.Text))
+            end)
             self:Notify({ Title = "Success", Content = "Key Validated!", Duration = 3 })
             KeyFrame:Destroy()
             Callback()
@@ -2955,14 +2964,10 @@ function Library:ShowTooltip(text)
     
     if self.TooltipConnection then self.TooltipConnection:Disconnect() end
     -- [Optimization] Use InputChanged instead of RenderStepped
-    local lastUpdate = 0
     self.TooltipConnection = UserInputService.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
-            if tick() - lastUpdate > 0.08 then
-                lastUpdate = tick()
-                local mouse = UserInputService:GetMouseLocation()
-                self.Tooltip.Position = UDim2.fromOffset(mouse.X + 15, mouse.Y + 15)
-            end
+            local mouse = UserInputService:GetMouseLocation()
+            self.Tooltip.Position = UDim2.fromOffset(mouse.X + 15, mouse.Y + 15)
         end
     end)
 end
