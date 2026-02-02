@@ -1670,6 +1670,37 @@ function Library.new(options)
     self._dead = false
     self.Utility = Utility
 
+    -- [Fix] Initialize NotificationHolder here so KeySystem can use Notify() before CreateWindow()
+    self.NotificationHolder = Utility.Create("Frame", {
+        Name = "Notifications",
+        Parent = self.Gui,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 250, 0, 20),
+        Position = UDim2.new(1, -260, 0, 10),
+        ZIndex = 10000,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Active = true
+    })
+    Utility.Create("UICorner", { Parent = self.NotificationHolder, CornerRadius = UDim.new(0, 4) })
+    self.NotificationHolderTitle = Utility.Create("TextLabel", {
+        Parent = self.NotificationHolder,
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Text = "Notifications (Drag)",
+        TextColor3 = self.Theme.TextDim,
+        TextSize = 11,
+        Font = Enum.Font.Gotham,
+        Visible = false
+    }, { TextColor3 = "TextDim" })
+    Utility.Drag(self.NotificationHolder, nil, self)
+    
+    Utility.Create("UIListLayout", {
+        Parent = self.NotificationHolder,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5),
+        HorizontalAlignment = Enum.HorizontalAlignment.Center
+    })
+
     -- Centralized Input Handling
     self.Janitor:Add(UserInputService.InputBegan:Connect(function(input, gameProcessed)
         for _, hook in ipairs(self.BindHooks) do
@@ -2029,36 +2060,6 @@ function Library:CreateWindow(options)
         Position = UDim2.new(0, 10, 0, 60),
         Size = UDim2.new(1, -20, 1, -70),
         ZIndex = 2
-    })
-
-    self.NotificationHolder = Utility.Create("Frame", {
-        Name = "Notifications",
-        Parent = self.Gui,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0, 250, 0, 20),
-        Position = UDim2.new(1, -260, 0, 10),
-        ZIndex = 10000,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Active = true
-    })
-    Utility.Create("UICorner", { Parent = self.NotificationHolder, CornerRadius = UDim.new(0, 4) })
-    self.NotificationHolderTitle = Utility.Create("TextLabel", {
-        Parent = self.NotificationHolder,
-        Size = UDim2.new(1, 0, 0, 20),
-        BackgroundTransparency = 1,
-        Text = "Notifications (Drag)",
-        TextColor3 = self.Theme.TextDim,
-        TextSize = 11,
-        Font = Enum.Font.Gotham,
-        Visible = false
-    }, { TextColor3 = "TextDim" })
-    Utility.Drag(self.NotificationHolder, nil, self)
-    
-    Utility.Create("UIListLayout", {
-        Parent = self.NotificationHolder,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 5),
-        HorizontalAlignment = Enum.HorizontalAlignment.Center
     })
 
     self:CreateColorPickerWindow()
@@ -3001,6 +3002,13 @@ end
 function Library:Toggle()
     if self.MainWindow and self.MainWindow.Root then
         self.MainWindow.Root.Visible = not self.MainWindow.Root.Visible
+        
+        if self.MainWindow.Root.Visible then
+            UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        else
+            UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+        end
+
         if not self.MainWindow.Root.Visible then
             self:CloseColorPicker()
             self.NotificationHolder.BackgroundTransparency = 1
