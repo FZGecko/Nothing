@@ -1956,7 +1956,7 @@ function Library:CreateWindow(options)
         AnchorPoint = Vector2.new(0.5, 0.5),
         Size = UDim2.fromOffset(630, 580),
         Active = true,
-        GroupTransparency = 1,
+        GroupTransparency = 0,
         Visible = false
     })
 
