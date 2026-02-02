@@ -2879,7 +2879,7 @@ function Library:Notify(options)
     Utility.Create("UICorner", { Parent = Frame, CornerRadius = UDim.new(0, 4) })
     local Stroke = Utility.Create("UIStroke", { Parent = Frame, Color = self.Theme.Outline, Thickness = 1, Transparency = 1 }, { Color = "Outline" })
 
-    Utility.Create("Frame", {
+    local Accent = Utility.Create("Frame", {
         Name = "Accent",
         Parent = Frame,
         BackgroundColor3 = self.Theme.Accent,
@@ -2916,14 +2916,14 @@ function Library:Notify(options)
 
     TweenService:Create(Frame, TweenInfo.new(0.3), { BackgroundTransparency = self.NotificationTransparency }):Play()
     TweenService:Create(Stroke, TweenInfo.new(0.3), { Transparency = 0 }):Play()
-    TweenService:Create(Frame.Accent, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(Accent, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
     TweenService:Create(TitleLabel, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
     TweenService:Create(ContentLabel, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
 
     task.delay(duration, function()
         TweenService:Create(Frame, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
         TweenService:Create(Stroke, TweenInfo.new(0.3), { Transparency = 1 }):Play()
-        TweenService:Create(Frame.Accent, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(Accent, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
         TweenService:Create(TitleLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
         TweenService:Create(ContentLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
         task.wait(0.3)
